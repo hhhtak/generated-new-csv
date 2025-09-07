@@ -1,0 +1,41 @@
+{
+  "headerMappings": {
+    "名前": "name",
+    "年齢": "age",
+    "性別": "gender",
+    "職業": "occupation",
+    "給与": "salary",
+    "部署": "department",
+    "入社日": "hire_date",
+    "ステータス": "status"
+  },
+  "columnOrder": [
+    "name",
+    "age",
+    "department",
+    "occupation",
+    "salary",
+    "hire_date",
+    "gender",
+    "status"
+  ],
+  "valueReplacements": {
+    "gender": {
+      "男性": "M",
+      "女性": "F",
+      "その他": "O"
+    },
+    "status": {
+      "あり": "1",
+      "なし": "0",
+      "有効": "active",
+      "無効": "inactive"
+    },
+    "department": {
+      "営業部": "Sales",
+      "開発部": "Development",
+      "人事部": "HR",
+      "経理部": "Finance"
+    }
+  }
+}

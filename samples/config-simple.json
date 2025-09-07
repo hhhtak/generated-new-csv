@@ -1,0 +1,8 @@
+{
+  "headerMappings": {
+    "商品名": "product_name",
+    "価格": "price",
+    "在庫": "stock"
+  },
+  "columnOrder": ["product_name", "price", "stock"]
+}

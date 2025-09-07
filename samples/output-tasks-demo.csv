@@ -1,0 +1,6 @@
+task_id,title,availability,priority,assignee
+T001,データベース設計,1,high,田中
+T002,UI改善,0,medium,佐藤
+T003,テスト作成,1,low,山田
+T004,ドキュメント更新,1,medium,鈴木
+T005,バグ修正,0,high,高橋

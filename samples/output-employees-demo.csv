@@ -1,0 +1,6 @@
+name,age,department,occupation,salary,hire_date,gender,status
+田中太郎,30,Development,エンジニア,500000,2020-04-01,M,active
+佐藤花子,25,Sales,営業,450000,2021-06-15,F,active
+山田次郎,35,Development,マネージャー,700000,2018-03-10,M,active
+鈴木美咲,28,Finance,アナリスト,520000,2019-09-01,F,inactive
+高橋健一,42,HR,部長,800000,2015-01-20,M,active
