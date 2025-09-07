@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Japanese Start Task Messages",
+  "description": "Converts start task display messages to Japanese when CLI or main entry files are modified",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/cli.ts",
+      "src/index.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Please review the start task messages in the modified files and convert any English display text to Japanese. Focus on user-facing messages that appear when tasks begin, ensuring they are natural and appropriate Japanese translations."
+  }
+}
