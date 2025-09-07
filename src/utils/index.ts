@@ -2,3 +2,4 @@
 export * from "./ConfigurationLoader";
 export * from "./CSVWriter";
 export * from "./ErrorHandler";
+export * from "./Logger";

@@ -1,6 +1,8 @@
 import csvParser from "csv-parser";
 import * as fs from "fs";
 import { CSVData } from "../models";
+import { ErrorHandler } from "../utils/ErrorHandler";
+import { getLogger } from "../utils/Logger";
 
 /**
  * Interface for CSV parsing functionality
@@ -21,10 +23,14 @@ export interface CSVParser {
  * Implementation of CSV parser with header detection and enhanced validation
  */
 export class CSVParserImpl implements CSVParser {
+  private errorHandler = ErrorHandler.getInstance();
+  private logger = getLogger();
   /**
    * Parse a CSV file and return structured data with headers and rows separated
    */
   async parse(filePath: string): Promise<CSVData> {
+    this.logger.debug(`Starting CSV parsing: ${filePath}`);
+
     return new Promise((resolve, reject) => {
       const results: any[] = [];
       let headers: string[] = [];
@@ -32,7 +38,13 @@ export class CSVParserImpl implements CSVParser {
 
       // Check if file exists and is readable
       if (!fs.existsSync(filePath)) {
-        reject(new Error(`入力ファイル '${filePath}' が見つからないか読み取れません`));
+        const error = this.errorHandler.handleFileError(
+          { code: "ENOENT" },
+          filePath,
+          "read"
+        );
+        this.logger.error(`File not found: ${filePath}`, error);
+        reject(error);
         return;
       }
 
@@ -40,14 +52,25 @@ export class CSVParserImpl implements CSVParser {
       try {
         fs.accessSync(filePath, fs.constants.R_OK);
       } catch (error) {
-        reject(new Error(`入力ファイル '${filePath}' が見つからないか読み取れません`));
+        const structuredError = this.errorHandler.handleFileError(
+          error,
+          filePath,
+          "read"
+        );
+        this.logger.error(`File access denied: ${filePath}`, structuredError);
+        reject(structuredError);
         return;
       }
 
       // Check if file is empty
       const stats = fs.statSync(filePath);
       if (stats.size === 0) {
-        reject(new Error(`入力ファイル '${filePath}' は空です`));
+        const error = this.errorHandler.handleCSVError(
+          new Error(`入力ファイル '${filePath}' は空です`),
+          { file: filePath }
+        );
+        this.logger.error(`Empty file: ${filePath}`, error);
+        reject(error);
         return;
       }
 
@@ -61,7 +84,12 @@ export class CSVParserImpl implements CSVParser {
 
           // Validate headers
           if (!this.validateHeaders(headers)) {
-            reject(new Error(`CSV形式が無効です: ヘッダーが空または重複しています`));
+            const error = this.errorHandler.handleCSVError(
+              new Error(`CSV形式が無効です: ヘッダーが空または重複しています`),
+              { file: filePath, line: 1 }
+            );
+            this.logger.error(`Invalid CSV headers: ${filePath}`, error);
+            reject(error);
             return;
           }
         })
@@ -72,29 +100,35 @@ export class CSVParserImpl implements CSVParser {
 
             // Validate row structure
             if (!this.validateRowStructure(row, headers.length, lineNumber)) {
-              reject(new Error(`CSV形式が無効です: ${lineNumber}行目の列数が不正です`));
+              const error = this.errorHandler.handleCSVError(
+                new Error(`CSV形式が無効です: ${lineNumber}行目の列数が不正です`),
+                { file: filePath, line: lineNumber }
+              );
+              this.logger.error(`Invalid CSV row structure: ${filePath}`, error);
+              reject(error);
               return;
             }
 
             results.push(row);
             lineNumber++;
           } catch (error) {
-            reject(
-              new Error(
-                `CSV解析エラー: ${lineNumber}行目で解析に失敗しました - ${
-                  error instanceof Error ? error.message : String(error)
-                }`
-              )
+            const structuredError = this.errorHandler.handleCSVError(
+              error instanceof Error ? error : new Error(String(error)),
+              { file: filePath, line: lineNumber }
             );
+            this.logger.error(`CSV parsing error: ${filePath}`, structuredError);
+            reject(structuredError);
             return;
           }
         })
         .on("error", (error: Error) => {
           // Enhanced error reporting with line numbers when possible
-          const errorMessage = error.message.includes("line")
-            ? `CSV解析エラー: ${error.message}`
-            : `CSV解析エラー: ${lineNumber}行目付近で解析に失敗しました - ${error.message}`;
-          reject(new Error(errorMessage));
+          const structuredError = this.errorHandler.handleCSVError(error, {
+            file: filePath,
+            line: lineNumber,
+          });
+          this.logger.error(`CSV stream error: ${filePath}`, structuredError);
+          reject(structuredError);
         })
         .on("end", () => {
           try {
@@ -105,17 +139,27 @@ export class CSVParserImpl implements CSVParser {
             };
 
             if (!this.validateCompleteData(csvData)) {
-              reject(new Error(`CSV構造が無効です: データの整合性に問題があります`));
+              const error = this.errorHandler.handleCSVError(
+                new Error(`CSV構造が無効です: データの整合性に問題があります`),
+                { file: filePath, headers: headers.length, rows: results.length }
+              );
+              this.logger.error(`CSV validation failed: ${filePath}`, error);
+              reject(error);
               return;
             }
 
+            this.logger.info(`Successfully parsed CSV: ${filePath}`, {
+              headers: headers.length,
+              rows: results.length,
+            });
             resolve(csvData);
           } catch (error) {
-            reject(
-              new Error(
-                `CSV検証エラー: ${error instanceof Error ? error.message : String(error)}`
-              )
+            const structuredError = this.errorHandler.handleCSVError(
+              error instanceof Error ? error : new Error(String(error)),
+              { file: filePath }
             );
+            this.logger.error(`CSV validation error: ${filePath}`, structuredError);
+            reject(structuredError);
           }
         });
 

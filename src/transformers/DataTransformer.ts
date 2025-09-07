@@ -1,4 +1,6 @@
 import { CSVData, TransformationConfig } from "../models";
+import { CSVConverterError, ErrorHandler } from "../utils/ErrorHandler";
+import { getLogger } from "../utils/Logger";
 
 /**
  * Interface for data transformation operations
@@ -32,31 +34,67 @@ export interface DataTransformer {
  * Implementation of data transformation operations
  */
 export class DataTransformerImpl implements DataTransformer {
+  private errorHandler = ErrorHandler.getInstance();
+  private logger = getLogger();
   /**
    * Apply all transformations based on configuration
    */
   transform(data: CSVData, config: TransformationConfig): CSVData {
-    let transformedData = { ...data };
+    this.logger.debug("Starting data transformation", {
+      headers: data.headers.length,
+      rows: data.rows.length,
+      hasHeaderMappings: !!config.headerMappings,
+      hasColumnOrder: !!config.columnOrder,
+      hasValueReplacements: !!config.valueReplacements,
+    });
 
-    // Apply header mappings first
-    if (config.headerMappings) {
-      transformedData.headers = this.mapHeaders(
-        transformedData.headers,
-        config.headerMappings
+    try {
+      let transformedData = { ...data };
+
+      // Apply header mappings first
+      if (config.headerMappings) {
+        this.logger.debug("Applying header mappings", {
+          mappings: Object.keys(config.headerMappings).length,
+        });
+        transformedData.headers = this.mapHeaders(
+          transformedData.headers,
+          config.headerMappings
+        );
+      }
+
+      // Apply column reordering
+      if (config.columnOrder) {
+        this.logger.debug("Applying column reordering", { order: config.columnOrder });
+        transformedData = this.reorderColumns(transformedData, config.columnOrder);
+      }
+
+      // Apply value replacements
+      if (config.valueReplacements) {
+        this.logger.debug("Applying value replacements", {
+          columns: Object.keys(config.valueReplacements).length,
+        });
+        transformedData = this.replaceValues(transformedData, config.valueReplacements);
+      }
+
+      this.logger.info("Data transformation completed successfully", {
+        originalHeaders: data.headers.length,
+        transformedHeaders: transformedData.headers.length,
+        rows: transformedData.rows.length,
+      });
+
+      return transformedData;
+    } catch (error) {
+      if (error instanceof CSVConverterError) {
+        throw error;
+      }
+
+      const structuredError = this.errorHandler.handleTransformationError(
+        error instanceof Error ? error.message : "Unknown transformation error",
+        { originalHeaders: data.headers, config }
       );
+      this.logger.error("Data transformation failed", structuredError);
+      throw structuredError;
     }
-
-    // Apply column reordering
-    if (config.columnOrder) {
-      transformedData = this.reorderColumns(transformedData, config.columnOrder);
-    }
-
-    // Apply value replacements
-    if (config.valueReplacements) {
-      transformedData = this.replaceValues(transformedData, config.valueReplacements);
-    }
-
-    return transformedData;
   }
 
   /**
@@ -67,10 +105,11 @@ export class DataTransformerImpl implements DataTransformer {
     // Validate that all specified columns exist in the input data
     const missingColumns = order.filter((col) => !data.headers.includes(col));
     if (missingColumns.length > 0) {
-      throw new Error(
+      throw this.errorHandler.handleTransformationError(
         `columnOrderで指定された列 '${missingColumns.join(
           ", "
-        )}' が入力CSVに見つかりません`
+        )}' が入力CSVに見つかりません`,
+        { missingColumns, availableHeaders: data.headers, requestedOrder: order }
       );
     }
 
@@ -84,7 +123,10 @@ export class DataTransformerImpl implements DataTransformer {
     const columnIndices = order.map((header) => {
       const index = headerIndexMap.get(header);
       if (index === undefined) {
-        throw new Error(`列 '${header}' が見つかりません`);
+        throw this.errorHandler.handleTransformationError(
+          `列 '${header}' が見つかりません`,
+          { header, availableHeaders: data.headers }
+        );
       }
       return index;
     });

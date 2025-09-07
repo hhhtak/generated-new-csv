@@ -4,6 +4,8 @@ import {
   TransformationConfig,
   ValidationResult,
 } from "../models";
+import { CSVConverterError, ErrorHandler } from "./ErrorHandler";
+import { getLogger } from "./Logger";
 
 /**
  * Interface for loading and validating configuration files
@@ -24,31 +26,41 @@ export interface ConfigurationLoader {
  * Implementation of ConfigurationLoader for JSON configuration files
  */
 export class JSONConfigurationLoader implements ConfigurationLoader {
+  private errorHandler = ErrorHandler.getInstance();
+  private logger = getLogger();
+
   /**
    * Load configuration from JSON file
    */
   async load(configPath: string): Promise<TransformationConfig> {
+    this.logger.debug(`Loading configuration from: ${configPath}`);
+
     try {
       const fileContent = await fs.readFile(configPath, "utf-8");
       const config = JSON.parse(fileContent) as TransformationConfig;
 
       const validationResult = this.validate(config);
       if (!validationResult.isValid) {
-        throw new Error(`Invalid configuration: ${validationResult.errors.join(", ")}`);
+        const error = this.errorHandler.handleValidationError(
+          `Invalid configuration: ${validationResult.errors.join(", ")}`,
+          { file: configPath, errors: validationResult.errors }
+        );
+        this.logger.error(`Configuration validation failed: ${configPath}`, error, {
+          errors: validationResult.errors,
+        });
+        throw error;
       }
 
+      this.logger.info(`Configuration loaded successfully from: ${configPath}`);
       return config;
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        throw new Error(`Invalid JSON in configuration file: ${error.message}`);
+      if (error instanceof CSVConverterError) {
+        throw error; // Re-throw our structured errors
       }
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        throw new Error(`Configuration file not found: ${configPath}`);
-      }
-      if ((error as NodeJS.ErrnoException).code === "EACCES") {
-        throw new Error(`Permission denied reading configuration file: ${configPath}`);
-      }
-      throw error;
+
+      const structuredError = this.errorHandler.handleConfigError(error, configPath);
+      this.logger.error(`Failed to load configuration: ${configPath}`, structuredError);
+      throw structuredError;
     }
   }
 

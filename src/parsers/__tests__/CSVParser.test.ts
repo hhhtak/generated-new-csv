@@ -132,9 +132,7 @@ describe("CSVParser", () => {
     it("should throw error for non-existent file", async () => {
       const nonExistentFile = path.join(testDataDir, "does-not-exist.csv");
 
-      await expect(parser.parse(nonExistentFile)).rejects.toThrow(
-        `入力ファイル '${nonExistentFile}' が見つからないか読み取れません`
-      );
+      await expect(parser.parse(nonExistentFile)).rejects.toThrow("File not found");
     });
 
     it("should throw error for empty file", async () => {
