@@ -1,0 +1,40 @@
+{
+  "name": "csv-converter",
+  "version": "1.0.0",
+  "description": "A flexible CSV transformation tool with configurable rules",
+  "main": "dist/index.js",
+  "bin": {
+    "csv-converter": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/cli.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "csv",
+    "converter",
+    "transformation",
+    "data-processing"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "csv-parser": "3.0.0",
+    "commander": "11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.0.0",
+    "@typescript-eslint/eslint-plugin": "6.0.0",
+    "@typescript-eslint/parser": "6.0.0",
+    "eslint": "8.57.1",
+    "jest": "29.0.0",
+    "@types/jest": "29.0.0",
+    "ts-jest": "29.0.0",
+    "ts-node": "10.0.0",
+    "typescript": "5.9.2"
+  }
+}
