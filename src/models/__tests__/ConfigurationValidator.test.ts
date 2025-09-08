@@ -382,6 +382,40 @@ describe("ConfigurationValidator", () => {
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
+
+    it("should handle fixedColumns with very long column names", () => {
+      const longColumnName = "a".repeat(1000);
+      const fixedColumns = { [longColumnName]: "value" };
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should handle fixedColumns with very long values", () => {
+      const longValue = "value".repeat(1000);
+      const fixedColumns = { column: longValue };
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should handle fixedColumns with boolean-like values as strings", () => {
+      const fixedColumns = {
+        active: "true",
+        enabled: "false",
+        visible: "1",
+        hidden: "0",
+      };
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
   });
 
   describe("validateConfiguration", () => {
@@ -595,6 +629,81 @@ describe("ConfigurationValidator", () => {
       const config: TransformationConfig = {
         columnOrder: ["name", "status", "version"],
         fixedColumns: { status: "active", version: "1.0" },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+      expect(result.warnings).toHaveLength(0);
+    });
+
+    it("should handle multiple conflicts between fixedColumns and headerMappings", () => {
+      const config: TransformationConfig = {
+        headerMappings: {
+          old_status: "status",
+          old_version: "version",
+          name: "full_name",
+        },
+        fixedColumns: {
+          status: "active",
+          version: "1.0",
+          full_name: "Unknown",
+        },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Fixed column 'status' conflicts with mapped header in headerMappings"
+      );
+      expect(result.errors).toContain(
+        "Fixed column 'version' conflicts with mapped header in headerMappings"
+      );
+      expect(result.errors).toContain(
+        "Fixed column 'full_name' conflicts with mapped header in headerMappings"
+      );
+    });
+
+    it("should handle edge case where fixedColumn name matches both original and mapped header", () => {
+      const config: TransformationConfig = {
+        headerMappings: { status: "status_new" },
+        fixedColumns: { status: "active" },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Fixed column 'status' conflicts with original header in headerMappings"
+      );
+    });
+
+    it("should validate configuration with all features working together harmoniously", () => {
+      const config: TransformationConfig = {
+        headerMappings: { old_name: "name", old_age: "age" },
+        columnOrder: ["name", "age", "department", "status", "created_date"],
+        valueReplacements: {
+          department: { eng: "Engineering", hr: "Human Resources" },
+        },
+        fixedColumns: {
+          status: "active",
+          created_date: "2024-01-01",
+        },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+      expect(result.warnings).toHaveLength(0);
+    });
+
+    it("should handle empty string values in fixedColumns cross-validation", () => {
+      const config: TransformationConfig = {
+        columnOrder: ["name", "empty_field"],
+        fixedColumns: { empty_field: "" },
       };
 
       const result = ConfigurationValidator.validateConfiguration(config);

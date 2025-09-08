@@ -28,6 +28,11 @@ export interface DataTransformer {
    * Map headers to new names
    */
   mapHeaders(headers: string[], mappings: Record<string, string>): string[];
+
+  /**
+   * Add fixed columns with constant values
+   */
+  addFixedColumns(data: CSVData, fixedColumns: Record<string, string>): CSVData;
 }
 
 /**
@@ -74,6 +79,14 @@ export class DataTransformerImpl implements DataTransformer {
           columns: Object.keys(config.valueReplacements).length,
         });
         transformedData = this.replaceValues(transformedData, config.valueReplacements);
+      }
+
+      // Add fixed columns
+      if (config.fixedColumns) {
+        this.logger.debug("Adding fixed columns", {
+          columns: Object.keys(config.fixedColumns).length,
+        });
+        transformedData = this.addFixedColumns(transformedData, config.fixedColumns);
       }
 
       this.logger.info("Data transformation completed successfully", {
@@ -198,5 +211,44 @@ export class DataTransformerImpl implements DataTransformer {
       // Return mapped name if mapping exists, otherwise preserve original name
       return mappings.hasOwnProperty(header) ? mappings[header] : header;
     });
+  }
+
+  /**
+   * Add fixed columns with constant values
+   * Validates that fixed column names don't conflict with existing columns
+   */
+  addFixedColumns(data: CSVData, fixedColumns: Record<string, string>): CSVData {
+    // Check for duplicate column names
+    const duplicateColumns = Object.keys(fixedColumns).filter((columnName) =>
+      data.headers.includes(columnName)
+    );
+
+    if (duplicateColumns.length > 0) {
+      throw this.errorHandler.handleTransformationError(
+        `固定列の名前が既存の列と重複しています: '${duplicateColumns.join(", ")}'`,
+        {
+          duplicateColumns,
+          existingHeaders: data.headers,
+          fixedColumns: Object.keys(fixedColumns),
+        }
+      );
+    }
+
+    // Add fixed column headers
+    const newHeaders = [...data.headers, ...Object.keys(fixedColumns)];
+
+    // Add fixed column values to each row
+    const newRows = data.rows.map((row) => {
+      const newRow = [...row];
+      Object.values(fixedColumns).forEach((value) => {
+        newRow.push(value);
+      });
+      return newRow;
+    });
+
+    return {
+      headers: newHeaders,
+      rows: newRows,
+    };
   }
 }

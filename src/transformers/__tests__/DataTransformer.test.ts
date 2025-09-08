@@ -445,6 +445,185 @@ describe("DataTransformer", () => {
     });
   });
 
+  describe("addFixedColumns", () => {
+    const sampleData: CSVData = {
+      headers: ["name", "age", "city"],
+      rows: [
+        ["Alice", "25", "Tokyo"],
+        ["Bob", "30", "New York"],
+        ["Charlie", "35", "London"],
+      ],
+    };
+
+    it("should add single fixed column", () => {
+      const fixedColumns = {
+        status: "active",
+      };
+
+      const result = transformer.addFixedColumns(sampleData, fixedColumns);
+
+      expect(result.headers).toEqual(["name", "age", "city", "status"]);
+      expect(result.rows).toEqual([
+        ["Alice", "25", "Tokyo", "active"],
+        ["Bob", "30", "New York", "active"],
+        ["Charlie", "35", "London", "active"],
+      ]);
+    });
+
+    it("should add multiple fixed columns", () => {
+      const fixedColumns = {
+        status: "active",
+        created_date: "2024-01-01",
+        version: "1.0",
+      };
+
+      const result = transformer.addFixedColumns(sampleData, fixedColumns);
+
+      expect(result.headers).toEqual([
+        "name",
+        "age",
+        "city",
+        "status",
+        "created_date",
+        "version",
+      ]);
+      expect(result.rows).toEqual([
+        ["Alice", "25", "Tokyo", "active", "2024-01-01", "1.0"],
+        ["Bob", "30", "New York", "active", "2024-01-01", "1.0"],
+        ["Charlie", "35", "London", "active", "2024-01-01", "1.0"],
+      ]);
+    });
+
+    it("should handle empty fixed columns", () => {
+      const fixedColumns = {};
+
+      const result = transformer.addFixedColumns(sampleData, fixedColumns);
+
+      expect(result.headers).toEqual(sampleData.headers);
+      expect(result.rows).toEqual(sampleData.rows);
+    });
+
+    it("should handle data with no rows", () => {
+      const emptyData: CSVData = {
+        headers: ["name", "age"],
+        rows: [],
+      };
+
+      const fixedColumns = {
+        status: "active",
+      };
+
+      const result = transformer.addFixedColumns(emptyData, fixedColumns);
+
+      expect(result.headers).toEqual(["name", "age", "status"]);
+      expect(result.rows).toEqual([]);
+    });
+
+    it("should handle fixed columns with empty string values", () => {
+      const fixedColumns = {
+        status: "",
+        notes: "N/A",
+      };
+
+      const result = transformer.addFixedColumns(sampleData, fixedColumns);
+
+      expect(result.headers).toEqual(["name", "age", "city", "status", "notes"]);
+      expect(result.rows).toEqual([
+        ["Alice", "25", "Tokyo", "", "N/A"],
+        ["Bob", "30", "New York", "", "N/A"],
+        ["Charlie", "35", "London", "", "N/A"],
+      ]);
+    });
+
+    it("should handle fixed columns with special characters", () => {
+      const fixedColumns = {
+        "special-column": "value with spaces",
+        日本語列: "日本語値",
+        symbols: "!@#$%^&*()",
+      };
+
+      const result = transformer.addFixedColumns(sampleData, fixedColumns);
+
+      expect(result.headers).toEqual([
+        "name",
+        "age",
+        "city",
+        "special-column",
+        "日本語列",
+        "symbols",
+      ]);
+      expect(result.rows[0]).toEqual([
+        "Alice",
+        "25",
+        "Tokyo",
+        "value with spaces",
+        "日本語値",
+        "!@#$%^&*()",
+      ]);
+    });
+
+    it("should throw error when fixed column name duplicates existing column", () => {
+      const fixedColumns = {
+        name: "duplicate_name", // 'name' already exists in headers
+        status: "active",
+      };
+
+      expect(() => {
+        transformer.addFixedColumns(sampleData, fixedColumns);
+      }).toThrow("固定列の名前が既存の列と重複しています: 'name'");
+    });
+
+    it("should throw error when multiple fixed column names duplicate existing columns", () => {
+      const fixedColumns = {
+        name: "duplicate_name", // 'name' already exists
+        age: "duplicate_age", // 'age' already exists
+        status: "active",
+      };
+
+      expect(() => {
+        transformer.addFixedColumns(sampleData, fixedColumns);
+      }).toThrow("固定列の名前が既存の列と重複しています: 'name, age'");
+    });
+
+    it("should preserve original data immutability", () => {
+      const originalHeaders = [...sampleData.headers];
+      const originalRows = sampleData.rows.map((row) => [...row]);
+
+      const fixedColumns = {
+        status: "active",
+      };
+
+      transformer.addFixedColumns(sampleData, fixedColumns);
+
+      expect(sampleData.headers).toEqual(originalHeaders);
+      expect(sampleData.rows).toEqual(originalRows);
+    });
+
+    it("should handle data with missing cell values", () => {
+      const dataWithMissingCells: CSVData = {
+        headers: ["name", "age"],
+        rows: [
+          ["Alice", "25"],
+          ["Bob"], // Missing age
+          ["Charlie", "35"],
+        ],
+      };
+
+      const fixedColumns = {
+        status: "active",
+      };
+
+      const result = transformer.addFixedColumns(dataWithMissingCells, fixedColumns);
+
+      expect(result.headers).toEqual(["name", "age", "status"]);
+      expect(result.rows).toEqual([
+        ["Alice", "25", "active"],
+        ["Bob", "active"], // Missing age cell preserved
+        ["Charlie", "35", "active"],
+      ]);
+    });
+  });
+
   describe("transform (integration)", () => {
     const sampleData: CSVData = {
       headers: ["name", "status", "age"],
@@ -479,6 +658,39 @@ describe("DataTransformer", () => {
       ]);
     });
 
+    it("should apply all transformations including fixed columns", () => {
+      const config = {
+        headerMappings: {
+          name: "full_name",
+          status: "active_status",
+        },
+        valueReplacements: {
+          active_status: {
+            あり: "1",
+            なし: "0",
+          },
+        },
+        fixedColumns: {
+          created_date: "2024-01-01",
+          version: "1.0",
+        },
+      };
+
+      const result = transformer.transform(sampleData, config);
+
+      expect(result.headers).toEqual([
+        "full_name",
+        "active_status",
+        "age",
+        "created_date",
+        "version",
+      ]);
+      expect(result.rows).toEqual([
+        ["Alice", "1", "25", "2024-01-01", "1.0"],
+        ["Bob", "0", "30", "2024-01-01", "1.0"],
+      ]);
+    });
+
     it("should handle partial configuration", () => {
       const config = {
         valueReplacements: {
@@ -505,6 +717,23 @@ describe("DataTransformer", () => {
 
       expect(result.headers).toEqual(sampleData.headers);
       expect(result.rows).toEqual(sampleData.rows);
+    });
+
+    it("should handle fixed columns only configuration", () => {
+      const config = {
+        fixedColumns: {
+          department: "IT",
+          priority: "high",
+        },
+      };
+
+      const result = transformer.transform(sampleData, config);
+
+      expect(result.headers).toEqual(["name", "status", "age", "department", "priority"]);
+      expect(result.rows).toEqual([
+        ["Alice", "あり", "25", "IT", "high"],
+        ["Bob", "なし", "30", "IT", "high"],
+      ]);
     });
   });
 });

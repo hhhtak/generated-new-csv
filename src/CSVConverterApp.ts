@@ -75,12 +75,16 @@ export class CSVConverterApp {
           hasHeaderMappings: !!config.headerMappings,
           hasColumnOrder: !!config.columnOrder,
           hasValueReplacements: !!config.valueReplacements,
+          hasFixedColumns: !!config.fixedColumns,
           headerMappingsCount: config.headerMappings
             ? Object.keys(config.headerMappings).length
             : 0,
           columnOrderCount: config.columnOrder ? config.columnOrder.length : 0,
           valueReplacementsCount: config.valueReplacements
             ? Object.keys(config.valueReplacements).length
+            : 0,
+          fixedColumnsCount: config.fixedColumns
+            ? Object.keys(config.fixedColumns).length
             : 0,
         });
       } else {
@@ -136,7 +140,12 @@ export class CSVConverterApp {
    * Check if configuration contains any transformations
    */
   private hasTransformations(config: TransformationConfig): boolean {
-    return !!(config.headerMappings || config.columnOrder || config.valueReplacements);
+    return !!(
+      config.headerMappings ||
+      config.columnOrder ||
+      config.valueReplacements ||
+      config.fixedColumns
+    );
   }
 
   /**
