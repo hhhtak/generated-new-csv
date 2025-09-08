@@ -67,7 +67,15 @@ export class DataTransformerImpl implements DataTransformer {
         );
       }
 
-      // Apply column reordering
+      // Add fixed columns before column reordering
+      if (config.fixedColumns) {
+        this.logger.debug("Adding fixed columns", {
+          columns: Object.keys(config.fixedColumns).length,
+        });
+        transformedData = this.addFixedColumns(transformedData, config.fixedColumns);
+      }
+
+      // Apply column reordering (after fixed columns are added)
       if (config.columnOrder) {
         this.logger.debug("Applying column reordering", { order: config.columnOrder });
         transformedData = this.reorderColumns(transformedData, config.columnOrder);
@@ -79,14 +87,6 @@ export class DataTransformerImpl implements DataTransformer {
           columns: Object.keys(config.valueReplacements).length,
         });
         transformedData = this.replaceValues(transformedData, config.valueReplacements);
-      }
-
-      // Add fixed columns
-      if (config.fixedColumns) {
-        this.logger.debug("Adding fixed columns", {
-          columns: Object.keys(config.fixedColumns).length,
-        });
-        transformedData = this.addFixedColumns(transformedData, config.fixedColumns);
       }
 
       this.logger.info("Data transformation completed successfully", {
