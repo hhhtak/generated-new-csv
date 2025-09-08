@@ -17,7 +17,9 @@
     "salary",
     "hire_date",
     "gender",
-    "status"
+    "status",
+    "created_date",
+    "version"
   ],
   "valueReplacements": {
     "gender": {
@@ -37,5 +39,9 @@
       "人事部": "HR",
       "経理部": "Finance"
     }
+  },
+  "fixedColumns": {
+    "created_date": "2024-01-01",
+    "version": "1.0"
   }
 }

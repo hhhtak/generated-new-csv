@@ -10,4 +10,7 @@ export interface TransformationConfig {
 
   /** Value replacements per column */
   valueReplacements?: Record<string, Record<string, string>>;
+
+  /** Fixed columns to add with constant values */
+  fixedColumns?: Record<string, string>;
 }

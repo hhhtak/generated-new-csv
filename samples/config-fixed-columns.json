@@ -1,0 +1,9 @@
+{
+  "columnOrder": ["name", "email", "status", "created_date", "version", "source"],
+  "fixedColumns": {
+    "status": "active",
+    "created_date": "2024-01-01",
+    "version": "1.0",
+    "source": "import"
+  }
+}

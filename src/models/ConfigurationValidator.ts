@@ -132,6 +132,44 @@ export class ConfigurationValidator {
   }
 
   /**
+   * Validate fixed columns configuration
+   */
+  static validateFixedColumns(
+    fixedColumns: Record<string, string> | undefined
+  ): ValidationResult {
+    const errors: string[] = [];
+
+    if (fixedColumns === undefined) {
+      return { isValid: true, errors: [] };
+    }
+
+    if (typeof fixedColumns !== "object" || fixedColumns === null) {
+      errors.push("fixedColumns must be an object");
+      return { isValid: false, errors };
+    }
+
+    for (const [columnName, value] of Object.entries(fixedColumns)) {
+      if (typeof columnName !== "string" || columnName.trim() === "") {
+        errors.push("fixedColumns column names must be non-empty strings");
+        break;
+      }
+      if (typeof value !== "string") {
+        errors.push(`fixedColumns value for column '${columnName}' must be a string`);
+        break;
+      }
+    }
+
+    // Check for duplicate column names
+    const columnNames = Object.keys(fixedColumns);
+    const uniqueColumns = new Set(columnNames);
+    if (uniqueColumns.size !== columnNames.length) {
+      errors.push("fixedColumns cannot contain duplicate column names");
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }
+
+  /**
    * Validate entire transformation configuration
    */
   static validateConfiguration(config: TransformationConfig): ValidationResult {
@@ -150,10 +188,12 @@ export class ConfigurationValidator {
     const valueReplacementsResult = this.validateValueReplacements(
       config.valueReplacements
     );
+    const fixedColumnsResult = this.validateFixedColumns(config.fixedColumns);
 
     errors.push(...headerMappingsResult.errors);
     errors.push(...columnOrderResult.errors);
     errors.push(...valueReplacementsResult.errors);
+    errors.push(...fixedColumnsResult.errors);
 
     // Cross-validation: check if columnOrder references mapped headers
     if (config.headerMappings && config.columnOrder) {
@@ -169,8 +209,59 @@ export class ConfigurationValidator {
       }
     }
 
+    // Cross-validation: check for conflicts between fixed columns and other configurations
+    if (config.fixedColumns) {
+      const fixedColumnNames = new Set(Object.keys(config.fixedColumns));
+
+      // Check conflicts with header mappings
+      if (config.headerMappings) {
+        const mappedHeaders = new Set(Object.values(config.headerMappings));
+        const originalHeaders = new Set(Object.keys(config.headerMappings));
+
+        for (const fixedColumn of fixedColumnNames) {
+          if (originalHeaders.has(fixedColumn)) {
+            errors.push(
+              `Fixed column '${fixedColumn}' conflicts with original header in headerMappings`
+            );
+          }
+          if (mappedHeaders.has(fixedColumn)) {
+            errors.push(
+              `Fixed column '${fixedColumn}' conflicts with mapped header in headerMappings`
+            );
+          }
+        }
+      }
+
+      // Check if fixed columns are referenced in columnOrder
+      if (config.columnOrder) {
+        for (const fixedColumn of fixedColumnNames) {
+          if (!config.columnOrder.includes(fixedColumn)) {
+            warnings.push(
+              `Fixed column '${fixedColumn}' is not included in columnOrder and will be placed at the end`
+            );
+          }
+        }
+      }
+
+      // Check if fixed columns are referenced in value replacements
+      if (config.valueReplacements) {
+        for (const fixedColumn of fixedColumnNames) {
+          if (config.valueReplacements[fixedColumn]) {
+            warnings.push(
+              `Fixed column '${fixedColumn}' has value replacements defined, but fixed columns have constant values`
+            );
+          }
+        }
+      }
+    }
+
     // Add warnings for empty configuration
-    if (!config.headerMappings && !config.columnOrder && !config.valueReplacements) {
+    if (
+      !config.headerMappings &&
+      !config.columnOrder &&
+      !config.valueReplacements &&
+      !config.fixedColumns
+    ) {
       warnings.push("Configuration is empty - no transformations will be applied");
     }
 

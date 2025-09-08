@@ -274,6 +274,116 @@ describe("ConfigurationValidator", () => {
     });
   });
 
+  describe("validateFixedColumns", () => {
+    it("should validate undefined fixedColumns", () => {
+      const result = ConfigurationValidator.validateFixedColumns(undefined);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should validate valid fixedColumns", () => {
+      const fixedColumns = {
+        status: "active",
+        created_date: "2024-01-01",
+        version: "1.0",
+      };
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should reject non-object fixedColumns", () => {
+      const result = ConfigurationValidator.validateFixedColumns("not an object" as any);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain("fixedColumns must be an object");
+    });
+
+    it("should reject null fixedColumns", () => {
+      const result = ConfigurationValidator.validateFixedColumns(null as any);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain("fixedColumns must be an object");
+    });
+
+    it("should reject fixedColumns with empty column names", () => {
+      const fixedColumns = { "": "value" };
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "fixedColumns column names must be non-empty strings"
+      );
+    });
+
+    it("should reject fixedColumns with whitespace-only column names", () => {
+      const fixedColumns = { "  ": "value" };
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "fixedColumns column names must be non-empty strings"
+      );
+    });
+
+    it("should handle numeric keys converted to strings", () => {
+      // JavaScript automatically converts numeric keys to strings
+      const fixedColumns = { 123: "value" };
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should reject fixedColumns with non-string values", () => {
+      const fixedColumns = { column: 123 } as any;
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "fixedColumns value for column 'column' must be a string"
+      );
+    });
+
+    it("should allow fixedColumns with empty string values", () => {
+      const fixedColumns = { column: "" };
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should validate empty fixedColumns object", () => {
+      const fixedColumns = {};
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should handle fixedColumns with special characters in values", () => {
+      const fixedColumns = {
+        special: 'value with spaces, commas, and "quotes"',
+        unicode: "日本語テスト",
+        newlines: "line1\nline2",
+      };
+
+      const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+  });
+
   describe("validateConfiguration", () => {
     it("should validate empty configuration with warning", () => {
       const config: TransformationConfig = {};
@@ -290,8 +400,9 @@ describe("ConfigurationValidator", () => {
     it("should validate complete valid configuration", () => {
       const config: TransformationConfig = {
         headerMappings: { old: "new" },
-        columnOrder: ["new", "other"],
+        columnOrder: ["new", "other", "status"],
         valueReplacements: { status: { yes: "1", no: "0" } },
+        fixedColumns: { status: "active", version: "1.0" },
       };
 
       const result = ConfigurationValidator.validateConfiguration(config);
@@ -319,6 +430,7 @@ describe("ConfigurationValidator", () => {
         headerMappings: "invalid" as any,
         columnOrder: "invalid" as any,
         valueReplacements: "invalid" as any,
+        fixedColumns: "invalid" as any,
       };
 
       const result = ConfigurationValidator.validateConfiguration(config);
@@ -327,6 +439,7 @@ describe("ConfigurationValidator", () => {
       expect(result.errors).toContain("headerMappings must be an object");
       expect(result.errors).toContain("columnOrder must be an array");
       expect(result.errors).toContain("valueReplacements must be an object");
+      expect(result.errors).toContain("fixedColumns must be an object");
     });
 
     it("should warn about columnOrder referencing original headers that will be mapped", () => {
@@ -374,6 +487,121 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
+    });
+
+    it("should validate configuration with only fixedColumns", () => {
+      const config: TransformationConfig = {
+        fixedColumns: { status: "active", version: "1.0" },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should detect conflict between fixedColumns and original headers in headerMappings", () => {
+      const config: TransformationConfig = {
+        headerMappings: { status: "new_status" },
+        fixedColumns: { status: "active" },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Fixed column 'status' conflicts with original header in headerMappings"
+      );
+    });
+
+    it("should detect conflict between fixedColumns and mapped headers in headerMappings", () => {
+      const config: TransformationConfig = {
+        headerMappings: { old_status: "status" },
+        fixedColumns: { status: "active" },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Fixed column 'status' conflicts with mapped header in headerMappings"
+      );
+    });
+
+    it("should warn when fixedColumns are not included in columnOrder", () => {
+      const config: TransformationConfig = {
+        columnOrder: ["name", "age"],
+        fixedColumns: { status: "active", version: "1.0" },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(true);
+      expect(result.warnings).toContain(
+        "Fixed column 'status' is not included in columnOrder and will be placed at the end"
+      );
+      expect(result.warnings).toContain(
+        "Fixed column 'version' is not included in columnOrder and will be placed at the end"
+      );
+    });
+
+    it("should warn when fixedColumns have value replacements defined", () => {
+      const config: TransformationConfig = {
+        valueReplacements: { status: { old: "new" } },
+        fixedColumns: { status: "active" },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(true);
+      expect(result.warnings).toContain(
+        "Fixed column 'status' has value replacements defined, but fixed columns have constant values"
+      );
+    });
+
+    it("should handle complex cross-validation scenarios", () => {
+      const config: TransformationConfig = {
+        headerMappings: { old_name: "name", old_status: "status" },
+        columnOrder: ["name", "age", "department"],
+        valueReplacements: {
+          status: { yes: "1", no: "0" },
+          department: { eng: "Engineering" },
+        },
+        fixedColumns: {
+          status: "active",
+          version: "1.0",
+          department: "Unknown",
+        },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Fixed column 'status' conflicts with mapped header in headerMappings"
+      );
+      expect(result.warnings).toContain(
+        "Fixed column 'version' is not included in columnOrder and will be placed at the end"
+      );
+      expect(result.warnings).toContain(
+        "Fixed column 'status' has value replacements defined, but fixed columns have constant values"
+      );
+      expect(result.warnings).toContain(
+        "Fixed column 'department' has value replacements defined, but fixed columns have constant values"
+      );
+    });
+
+    it("should validate configuration with fixedColumns properly included in columnOrder", () => {
+      const config: TransformationConfig = {
+        columnOrder: ["name", "status", "version"],
+        fixedColumns: { status: "active", version: "1.0" },
+      };
+
+      const result = ConfigurationValidator.validateConfiguration(config);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+      expect(result.warnings).toHaveLength(0);
     });
   });
 });
