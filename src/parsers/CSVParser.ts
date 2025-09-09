@@ -79,6 +79,11 @@ export class CSVParserImpl implements CSVParser {
       stream
         .pipe(csvParser())
         .on("headers", (headerList: string[]) => {
+          // Strip BOM from first header if present
+          if (headerList.length > 0 && headerList[0].charCodeAt(0) === 0xfeff) {
+            headerList[0] = headerList[0].substring(1);
+          }
+
           headers = headerList;
           lineNumber++; // Headers are on line 1, data starts from line 2
 

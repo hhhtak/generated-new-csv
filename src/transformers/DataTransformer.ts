@@ -61,10 +61,10 @@ export class DataTransformerImpl implements DataTransformer {
         this.logger.debug("Applying header mappings", {
           mappings: Object.keys(config.headerMappings).length,
         });
-        transformedData.headers = this.mapHeaders(
-          transformedData.headers,
-          config.headerMappings
-        );
+        transformedData = {
+          headers: this.mapHeaders(transformedData.headers, config.headerMappings),
+          rows: transformedData.rows,
+        };
       }
 
       // Add fixed columns before column reordering
