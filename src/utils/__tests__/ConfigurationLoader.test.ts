@@ -183,7 +183,9 @@ describe("JSONConfigurationLoader", () => {
         const result = loader.validate(config);
 
         expect(result.isValid).toBe(false);
-        expect(result.errors).toContain("headerMappings keys and values must be strings");
+        expect(result.errors).toContain(
+          "headerMappings value for key 'valid' must be a string or an array of strings"
+        );
       });
 
       it("should reject headerMappings with empty strings", () => {
@@ -194,9 +196,7 @@ describe("JSONConfigurationLoader", () => {
         const result = loader.validate(config);
 
         expect(result.isValid).toBe(false);
-        expect(result.errors).toContain(
-          "headerMappings keys and values cannot be empty strings"
-        );
+        expect(result.errors).toContain("headerMappings keys must be non-empty strings");
       });
 
       it("should reject invalid columnOrder type", () => {
@@ -305,9 +305,7 @@ describe("JSONConfigurationLoader", () => {
         const result = loader.validate(config);
 
         expect(result.isValid).toBe(false);
-        expect(result.errors).toContain(
-          "headerMappings keys and values cannot be empty strings"
-        );
+        expect(result.errors).toContain("headerMappings keys must be non-empty strings");
       });
 
       it("should handle whitespace-only strings in columnOrder", () => {

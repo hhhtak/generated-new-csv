@@ -349,99 +349,169 @@ describe("DataTransformer", () => {
 
   describe("mapHeaders", () => {
     it("should map headers to new names", () => {
-      const headers = ["name", "age", "city"];
+      const data: CSVData = {
+        headers: ["name", "age", "city"],
+        rows: [
+          ["Alice", "25", "Tokyo"],
+          ["Bob", "30", "New York"],
+        ],
+      };
       const mappings = {
         name: "full_name",
         age: "years_old",
         city: "location",
       };
 
-      const result = transformer.mapHeaders(headers, mappings);
+      const result = transformer.mapHeaders(data, mappings);
 
-      expect(result).toEqual(["full_name", "years_old", "location"]);
+      expect(result.headers).toEqual(["full_name", "years_old", "location"]);
+      expect(result.rows).toEqual([
+        ["Alice", "25", "Tokyo"],
+        ["Bob", "30", "New York"],
+      ]);
     });
 
     it("should preserve original names when no mapping is provided", () => {
-      const headers = ["name", "age", "city"];
+      const data: CSVData = {
+        headers: ["name", "age", "city"],
+        rows: [["Alice", "25", "Tokyo"]],
+      };
       const mappings = {
         name: "full_name",
         // age and city have no mappings
       };
 
-      const result = transformer.mapHeaders(headers, mappings);
+      const result = transformer.mapHeaders(data, mappings);
 
-      expect(result).toEqual(["full_name", "age", "city"]);
+      expect(result.headers).toEqual(["full_name", "age", "city"]);
+      expect(result.rows).toEqual([["Alice", "25", "Tokyo"]]);
     });
 
     it("should handle empty mappings", () => {
-      const headers = ["name", "age", "city"];
+      const data: CSVData = {
+        headers: ["name", "age", "city"],
+        rows: [["Alice", "25", "Tokyo"]],
+      };
       const mappings = {};
 
-      const result = transformer.mapHeaders(headers, mappings);
+      const result = transformer.mapHeaders(data, mappings);
 
-      expect(result).toEqual(["name", "age", "city"]);
+      expect(result.headers).toEqual(["name", "age", "city"]);
+      expect(result.rows).toEqual([["Alice", "25", "Tokyo"]]);
     });
 
     it("should handle empty headers array", () => {
-      const headers: string[] = [];
+      const data: CSVData = {
+        headers: [],
+        rows: [],
+      };
       const mappings = {
         name: "full_name",
       };
 
-      const result = transformer.mapHeaders(headers, mappings);
+      const result = transformer.mapHeaders(data, mappings);
 
-      expect(result).toEqual([]);
+      expect(result.headers).toEqual([]);
+      expect(result.rows).toEqual([]);
     });
 
     it("should handle mappings for non-existent headers", () => {
-      const headers = ["name", "age"];
+      const data: CSVData = {
+        headers: ["name", "age"],
+        rows: [["Alice", "25"]],
+      };
       const mappings = {
         name: "full_name",
         nonexistent: "mapped_name",
         age: "years",
       };
 
-      const result = transformer.mapHeaders(headers, mappings);
+      const result = transformer.mapHeaders(data, mappings);
 
-      expect(result).toEqual(["full_name", "years"]);
+      expect(result.headers).toEqual(["full_name", "years"]);
+      expect(result.rows).toEqual([["Alice", "25"]]);
     });
 
     it("should handle special characters in header names", () => {
-      const headers = ["名前", "age-years", "city/location"];
+      const data: CSVData = {
+        headers: ["名前", "age-years", "city/location"],
+        rows: [["Alice", "25", "Tokyo"]],
+      };
       const mappings = {
         名前: "name",
         "age-years": "age",
         "city/location": "city",
       };
 
-      const result = transformer.mapHeaders(headers, mappings);
+      const result = transformer.mapHeaders(data, mappings);
 
-      expect(result).toEqual(["name", "age", "city"]);
+      expect(result.headers).toEqual(["name", "age", "city"]);
+      expect(result.rows).toEqual([["Alice", "25", "Tokyo"]]);
     });
 
     it("should handle empty string headers", () => {
-      const headers = ["name", "", "age"];
+      const data: CSVData = {
+        headers: ["name", "", "age"],
+        rows: [["Alice", "unknown", "25"]],
+      };
       const mappings = {
         name: "full_name",
         "": "empty_header",
         age: "years",
       };
 
-      const result = transformer.mapHeaders(headers, mappings);
+      const result = transformer.mapHeaders(data, mappings);
 
-      expect(result).toEqual(["full_name", "empty_header", "years"]);
+      expect(result.headers).toEqual(["full_name", "empty_header", "years"]);
+      expect(result.rows).toEqual([["Alice", "unknown", "25"]]);
     });
 
-    it("should preserve original array immutability", () => {
-      const headers = ["name", "age", "city"];
-      const originalHeaders = [...headers];
+    it("should preserve original data immutability", () => {
+      const data: CSVData = {
+        headers: ["name", "age", "city"],
+        rows: [["Alice", "25", "Tokyo"]],
+      };
+      const originalHeaders = [...data.headers];
+      const originalRows = data.rows.map((row) => [...row]);
       const mappings = {
         name: "full_name",
       };
 
-      transformer.mapHeaders(headers, mappings);
+      transformer.mapHeaders(data, mappings);
 
-      expect(headers).toEqual(originalHeaders);
+      expect(data.headers).toEqual(originalHeaders);
+      expect(data.rows).toEqual(originalRows);
+    });
+
+    it("should handle array mappings (1-to-many)", () => {
+      const data: CSVData = {
+        headers: ["name", "full_address"],
+        rows: [
+          ["Alice", "123 Main St, Tokyo, Japan"],
+          ["Bob", "456 Oak Ave, New York, USA"],
+        ],
+      };
+      const mappings = {
+        full_address: ["street", "city", "country"],
+      };
+
+      const result = transformer.mapHeaders(data, mappings);
+
+      expect(result.headers).toEqual(["name", "street", "city", "country"]);
+      expect(result.rows).toEqual([
+        [
+          "Alice",
+          "123 Main St, Tokyo, Japan",
+          "123 Main St, Tokyo, Japan",
+          "123 Main St, Tokyo, Japan",
+        ],
+        [
+          "Bob",
+          "456 Oak Ave, New York, USA",
+          "456 Oak Ave, New York, USA",
+          "456 Oak Ave, New York, USA",
+        ],
+      ]);
     });
   });
 
@@ -470,11 +540,12 @@ describe("DataTransformer", () => {
       ]);
     });
 
-    it("should add multiple fixed columns", () => {
+    it("should add multiple fixed columns with string and number values", () => {
       const fixedColumns = {
         status: "active",
         created_date: "2024-01-01",
-        version: "1.0",
+        version: 1.0,
+        count: 42,
       };
 
       const result = transformer.addFixedColumns(sampleData, fixedColumns);
@@ -486,11 +557,12 @@ describe("DataTransformer", () => {
         "status",
         "created_date",
         "version",
+        "count",
       ]);
       expect(result.rows).toEqual([
-        ["Alice", "25", "Tokyo", "active", "2024-01-01", "1.0"],
-        ["Bob", "30", "New York", "active", "2024-01-01", "1.0"],
-        ["Charlie", "35", "London", "active", "2024-01-01", "1.0"],
+        ["Alice", "25", "Tokyo", "active", "2024-01-01", "1", "42"],
+        ["Bob", "30", "New York", "active", "2024-01-01", "1", "42"],
+        ["Charlie", "35", "London", "active", "2024-01-01", "1", "42"],
       ]);
     });
 
@@ -519,19 +591,27 @@ describe("DataTransformer", () => {
       expect(result.rows).toEqual([]);
     });
 
-    it("should handle fixed columns with empty string values", () => {
+    it("should handle fixed columns with numeric values", () => {
       const fixedColumns = {
-        status: "",
-        notes: "N/A",
+        count: 100,
+        price: 99.99,
+        version: 2,
       };
 
       const result = transformer.addFixedColumns(sampleData, fixedColumns);
 
-      expect(result.headers).toEqual(["name", "age", "city", "status", "notes"]);
+      expect(result.headers).toEqual([
+        "name",
+        "age",
+        "city",
+        "count",
+        "price",
+        "version",
+      ]);
       expect(result.rows).toEqual([
-        ["Alice", "25", "Tokyo", "", "N/A"],
-        ["Bob", "30", "New York", "", "N/A"],
-        ["Charlie", "35", "London", "", "N/A"],
+        ["Alice", "25", "Tokyo", "100", "99.99", "2"],
+        ["Bob", "30", "New York", "100", "99.99", "2"],
+        ["Charlie", "35", "London", "100", "99.99", "2"],
       ]);
     });
 
@@ -658,7 +738,7 @@ describe("DataTransformer", () => {
       ]);
     });
 
-    it("should apply all transformations including fixed columns", () => {
+    it("should apply all transformations including fixed columns with numbers", () => {
       const config = {
         headerMappings: {
           name: "full_name",
@@ -672,7 +752,8 @@ describe("DataTransformer", () => {
         },
         fixedColumns: {
           created_date: "2024-01-01",
-          version: "1.0",
+          version: 1.0,
+          count: 42,
         },
       };
 
@@ -684,10 +765,11 @@ describe("DataTransformer", () => {
         "age",
         "created_date",
         "version",
+        "count",
       ]);
       expect(result.rows).toEqual([
-        ["Alice", "1", "25", "2024-01-01", "1.0"],
-        ["Bob", "0", "30", "2024-01-01", "1.0"],
+        ["Alice", "1", "25", "2024-01-01", "1", "42"],
+        ["Bob", "0", "30", "2024-01-01", "1", "42"],
       ]);
     });
 
@@ -719,20 +801,30 @@ describe("DataTransformer", () => {
       expect(result.rows).toEqual(sampleData.rows);
     });
 
-    it("should handle fixed columns only configuration", () => {
+    it("should handle fixed columns only configuration with numbers", () => {
       const config = {
         fixedColumns: {
           department: "IT",
           priority: "high",
+          level: 5,
+          score: 98.5,
         },
       };
 
       const result = transformer.transform(sampleData, config);
 
-      expect(result.headers).toEqual(["name", "status", "age", "department", "priority"]);
+      expect(result.headers).toEqual([
+        "name",
+        "status",
+        "age",
+        "department",
+        "priority",
+        "level",
+        "score",
+      ]);
       expect(result.rows).toEqual([
-        ["Alice", "あり", "25", "IT", "high"],
-        ["Bob", "なし", "30", "IT", "high"],
+        ["Alice", "あり", "25", "IT", "high", "5", "98.5"],
+        ["Bob", "なし", "30", "IT", "high", "5", "98.5"],
       ]);
     });
   });

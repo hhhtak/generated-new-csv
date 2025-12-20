@@ -44,7 +44,9 @@ describe("ConfigurationValidator", () => {
       const result = ConfigurationValidator.validateHeaderMappings(headerMappings);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain("headerMappings keys and values must be strings");
+      expect(result.errors).toContain(
+        "headerMappings value for key 'valid' must be a string or an array of strings"
+      );
     });
 
     it("should reject headerMappings with empty string keys", () => {
@@ -53,9 +55,7 @@ describe("ConfigurationValidator", () => {
       const result = ConfigurationValidator.validateHeaderMappings(headerMappings);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        "headerMappings keys and values cannot be empty strings"
-      );
+      expect(result.errors).toContain("headerMappings keys must be non-empty strings");
     });
 
     it("should reject headerMappings with empty string values", () => {
@@ -65,7 +65,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "headerMappings keys and values cannot be empty strings"
+        "headerMappings value for key 'key' cannot be an empty string"
       );
     });
 
@@ -75,9 +75,7 @@ describe("ConfigurationValidator", () => {
       const result = ConfigurationValidator.validateHeaderMappings(headerMappings);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        "headerMappings keys and values cannot be empty strings"
-      );
+      expect(result.errors).toContain("headerMappings keys must be non-empty strings");
     });
 
     it("should detect circular mappings", () => {
@@ -282,11 +280,12 @@ describe("ConfigurationValidator", () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it("should validate valid fixedColumns", () => {
+    it("should validate valid fixedColumns with string and number values", () => {
       const fixedColumns = {
         status: "active",
         created_date: "2024-01-01",
-        version: "1.0",
+        version: 1.0,
+        count: 42,
       };
 
       const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
@@ -341,19 +340,23 @@ describe("ConfigurationValidator", () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it("should reject fixedColumns with non-string values", () => {
-      const fixedColumns = { column: 123 } as any;
+    it("should reject fixedColumns with non-string and non-number values", () => {
+      const fixedColumns = { column: true } as any;
 
       const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "fixedColumns value for column 'column' must be a string"
+        "fixedColumns value for column 'column' must be a string or a number"
       );
     });
 
-    it("should allow fixedColumns with empty string values", () => {
-      const fixedColumns = { column: "" };
+    it("should validate fixedColumns with numeric values", () => {
+      const fixedColumns = {
+        count: 42,
+        price: 99.99,
+        version: 1,
+      };
 
       const result = ConfigurationValidator.validateFixedColumns(fixedColumns);
 
@@ -431,12 +434,12 @@ describe("ConfigurationValidator", () => {
       );
     });
 
-    it("should validate complete valid configuration", () => {
+    it("should validate complete valid configuration with numeric fixedColumns", () => {
       const config: TransformationConfig = {
         headerMappings: { old: "new" },
-        columnOrder: ["new", "other", "status"],
+        columnOrder: ["new", "other", "status", "count"],
         valueReplacements: { status: { yes: "1", no: "0" } },
-        fixedColumns: { status: "active", version: "1.0" },
+        fixedColumns: { status: "active", count: 42 },
       };
 
       const result = ConfigurationValidator.validateConfiguration(config);
@@ -523,9 +526,9 @@ describe("ConfigurationValidator", () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it("should validate configuration with only fixedColumns", () => {
+    it("should validate configuration with only fixedColumns including numbers", () => {
       const config: TransformationConfig = {
-        fixedColumns: { status: "active", version: "1.0" },
+        fixedColumns: { status: "active", version: 1.0, count: 42 },
       };
 
       const result = ConfigurationValidator.validateConfiguration(config);
@@ -565,7 +568,7 @@ describe("ConfigurationValidator", () => {
     it("should warn when fixedColumns are not included in columnOrder", () => {
       const config: TransformationConfig = {
         columnOrder: ["name", "age"],
-        fixedColumns: { status: "active", version: "1.0" },
+        fixedColumns: { status: "active", version: 1.0 },
       };
 
       const result = ConfigurationValidator.validateConfiguration(config);
@@ -628,7 +631,7 @@ describe("ConfigurationValidator", () => {
     it("should validate configuration with fixedColumns properly included in columnOrder", () => {
       const config: TransformationConfig = {
         columnOrder: ["name", "status", "version"],
-        fixedColumns: { status: "active", version: "1.0" },
+        fixedColumns: { status: "active", version: 1.0 },
       };
 
       const result = ConfigurationValidator.validateConfiguration(config);
@@ -647,7 +650,7 @@ describe("ConfigurationValidator", () => {
         },
         fixedColumns: {
           status: "active",
-          version: "1.0",
+          version: 1.0,
           full_name: "Unknown",
         },
       };
