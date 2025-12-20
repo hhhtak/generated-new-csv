@@ -27,12 +27,18 @@ export interface DataTransformer {
   /**
    * Map headers to new names
    */
-  mapHeaders(headers: string[], mappings: Record<string, string>): string[];
+  mapHeaders(
+    data: CSVData,
+    mappings: Record<string, string | string[]>
+  ): CSVData;
 
   /**
    * Add fixed columns with constant values
    */
-  addFixedColumns(data: CSVData, fixedColumns: Record<string, string>): CSVData;
+  addFixedColumns(
+    data: CSVData,
+    fixedColumns: Record<string, string | number>
+  ): CSVData;
 }
 
 /**
@@ -61,10 +67,10 @@ export class DataTransformerImpl implements DataTransformer {
         this.logger.debug("Applying header mappings", {
           mappings: Object.keys(config.headerMappings).length,
         });
-        transformedData = {
-          headers: this.mapHeaders(transformedData.headers, config.headerMappings),
-          rows: transformedData.rows,
-        };
+        transformedData = this.mapHeaders(
+          transformedData,
+          config.headerMappings
+        );
       }
 
       // Add fixed columns before column reordering
@@ -72,13 +78,21 @@ export class DataTransformerImpl implements DataTransformer {
         this.logger.debug("Adding fixed columns", {
           columns: Object.keys(config.fixedColumns).length,
         });
-        transformedData = this.addFixedColumns(transformedData, config.fixedColumns);
+        transformedData = this.addFixedColumns(
+          transformedData,
+          config.fixedColumns
+        );
       }
 
       // Apply column reordering (after fixed columns are added)
       if (config.columnOrder) {
-        this.logger.debug("Applying column reordering", { order: config.columnOrder });
-        transformedData = this.reorderColumns(transformedData, config.columnOrder);
+        this.logger.debug("Applying column reordering", {
+          order: config.columnOrder,
+        });
+        transformedData = this.reorderColumns(
+          transformedData,
+          config.columnOrder
+        );
       }
 
       // Apply value replacements
@@ -86,7 +100,10 @@ export class DataTransformerImpl implements DataTransformer {
         this.logger.debug("Applying value replacements", {
           columns: Object.keys(config.valueReplacements).length,
         });
-        transformedData = this.replaceValues(transformedData, config.valueReplacements);
+        transformedData = this.replaceValues(
+          transformedData,
+          config.valueReplacements
+        );
       }
 
       this.logger.info("Data transformation completed successfully", {
@@ -122,7 +139,11 @@ export class DataTransformerImpl implements DataTransformer {
         `columnOrderで指定された列 '${missingColumns.join(
           ", "
         )}' が入力CSVに見つかりません`,
-        { missingColumns, availableHeaders: data.headers, requestedOrder: order }
+        {
+          missingColumns,
+          availableHeaders: data.headers,
+          requestedOrder: order,
+        }
       );
     }
 
@@ -206,18 +227,58 @@ export class DataTransformerImpl implements DataTransformer {
    * Map headers to new names
    * If no mapping is provided for a header, the original name is preserved
    */
-  mapHeaders(headers: string[], mappings: Record<string, string>): string[] {
-    return headers.map((header) => {
-      // Return mapped name if mapping exists, otherwise preserve original name
-      return mappings.hasOwnProperty(header) ? mappings[header] : header;
+  mapHeaders(
+    data: CSVData,
+    mappings: Record<string, string | string[]>
+  ): CSVData {
+    const newHeaders: string[] = [];
+    const headerMap: (string | string[] | null)[] = []; // Maps old index to new header(s)
+
+    // Determine new headers and create mapping from old index
+    for (const originalHeader of data.headers) {
+      const mapping = mappings[originalHeader];
+      if (mapping) {
+        if (Array.isArray(mapping)) {
+          newHeaders.push(...mapping);
+          headerMap.push(mapping);
+        } else {
+          newHeaders.push(mapping);
+          headerMap.push(mapping);
+        }
+      } else {
+        // Preserve original header if no mapping exists
+        newHeaders.push(originalHeader);
+        headerMap.push(null); // Indicates no mapping
+      }
+    }
+
+    // Transform rows based on the header map
+    const newRows = data.rows.map((oldRow) => {
+      const newRow: string[] = [];
+      oldRow.forEach((cellValue, index) => {
+        const mapping = headerMap[index];
+        if (Array.isArray(mapping)) {
+          // 1-to-many: duplicate the value for each new column
+          mapping.forEach(() => newRow.push(cellValue));
+        } else {
+          // 1-to-1 or no mapping: just push the value
+          newRow.push(cellValue);
+        }
+      });
+      return newRow;
     });
+
+    return { headers: newHeaders, rows: newRows };
   }
 
   /**
    * Add fixed columns with constant values
    * Validates that fixed column names don't conflict with existing columns
    */
-  addFixedColumns(data: CSVData, fixedColumns: Record<string, string>): CSVData {
+  addFixedColumns(
+    data: CSVData,
+    fixedColumns: Record<string, string | number>
+  ): CSVData {
     // Check for duplicate column names
     const duplicateColumns = Object.keys(fixedColumns).filter((columnName) =>
       data.headers.includes(columnName)
@@ -225,7 +286,9 @@ export class DataTransformerImpl implements DataTransformer {
 
     if (duplicateColumns.length > 0) {
       throw this.errorHandler.handleTransformationError(
-        `固定列の名前が既存の列と重複しています: '${duplicateColumns.join(", ")}'`,
+        `固定列の名前が既存の列と重複しています: '${duplicateColumns.join(
+          ", "
+        )}'`,
         {
           duplicateColumns,
           existingHeaders: data.headers,
@@ -241,7 +304,7 @@ export class DataTransformerImpl implements DataTransformer {
     const newRows = data.rows.map((row) => {
       const newRow = [...row];
       Object.values(fixedColumns).forEach((value) => {
-        newRow.push(value);
+        newRow.push(String(value));
       });
       return newRow;
     });

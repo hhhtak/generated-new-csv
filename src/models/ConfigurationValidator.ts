@@ -8,7 +8,7 @@ export class ConfigurationValidator {
    * Validate header mappings configuration
    */
   static validateHeaderMappings(
-    headerMappings: Record<string, string> | undefined
+    headerMappings: Record<string, string | string[]> | undefined
   ): ValidationResult {
     const errors: string[] = [];
 
@@ -22,23 +22,47 @@ export class ConfigurationValidator {
     }
 
     for (const [key, value] of Object.entries(headerMappings)) {
-      if (typeof key !== "string" || typeof value !== "string") {
-        errors.push("headerMappings keys and values must be strings");
+      if (typeof key !== "string" || key.trim() === "") {
+        errors.push("headerMappings keys must be non-empty strings");
         break;
       }
-      if (key.trim() === "" || value.trim() === "") {
-        errors.push("headerMappings keys and values cannot be empty strings");
-        break;
+
+      if (typeof value === "string") {
+        if (value.trim() === "") {
+          errors.push(
+            `headerMappings value for key '${key}' cannot be an empty string`
+          );
+        }
+      } else if (Array.isArray(value)) {
+        if (value.length === 0) {
+          errors.push(
+            `headerMappings array value for key '${key}' cannot be empty`
+          );
+        }
+        for (const v of value) {
+          if (typeof v !== "string" || v.trim() === "") {
+            errors.push(
+              `headerMappings array for key '${key}' must only contain non-empty strings`
+            );
+            break;
+          }
+        }
+      } else {
+        errors.push(
+          `headerMappings value for key '${key}' must be a string or an array of strings`
+        );
       }
     }
 
     // Check for circular mappings (A -> B, B -> A)
     const reverseMap = new Map<string, string>();
     for (const [key, value] of Object.entries(headerMappings)) {
-      if (reverseMap.has(value) && reverseMap.get(value) === key) {
-        errors.push(`Circular mapping detected: '${key}' <-> '${value}'`);
+      if (typeof value === "string") {
+        if (reverseMap.has(value) && reverseMap.get(value) === key) {
+          errors.push(`Circular mapping detected: '${key}' <-> '${value}'`);
+        }
+        reverseMap.set(key, value);
       }
-      reverseMap.set(key, value);
     }
 
     return { isValid: errors.length === 0, errors };
@@ -47,7 +71,9 @@ export class ConfigurationValidator {
   /**
    * Validate column order configuration
    */
-  static validateColumnOrder(columnOrder: string[] | undefined): ValidationResult {
+  static validateColumnOrder(
+    columnOrder: string[] | undefined
+  ): ValidationResult {
     const errors: string[] = [];
 
     if (columnOrder === undefined) {
@@ -96,14 +122,18 @@ export class ConfigurationValidator {
       return { isValid: false, errors };
     }
 
-    for (const [columnName, replacements] of Object.entries(valueReplacements)) {
+    for (const [columnName, replacements] of Object.entries(
+      valueReplacements
+    )) {
       if (typeof columnName !== "string" || columnName.trim() === "") {
         errors.push("valueReplacements column names must be non-empty strings");
         break;
       }
 
       if (typeof replacements !== "object" || replacements === null) {
-        errors.push(`valueReplacements for column '${columnName}' must be an object`);
+        errors.push(
+          `valueReplacements for column '${columnName}' must be an object`
+        );
         continue;
       }
 
@@ -135,7 +165,7 @@ export class ConfigurationValidator {
    * Validate fixed columns configuration
    */
   static validateFixedColumns(
-    fixedColumns: Record<string, string> | undefined
+    fixedColumns: Record<string, string | number> | undefined
   ): ValidationResult {
     const errors: string[] = [];
 
@@ -153,9 +183,11 @@ export class ConfigurationValidator {
         errors.push("fixedColumns column names must be non-empty strings");
         break;
       }
-      if (typeof value !== "string") {
-        errors.push(`fixedColumns value for column '${columnName}' must be a string`);
-        break;
+      if (typeof value !== "string" && typeof value !== "number") {
+        errors.push(
+          `fixedColumns value for column '${columnName}' must be a string or a number`
+        );
+        continue; // continue to find all errors
       }
     }
 
@@ -183,7 +215,9 @@ export class ConfigurationValidator {
     }
 
     // Validate each component
-    const headerMappingsResult = this.validateHeaderMappings(config.headerMappings);
+    const headerMappingsResult = this.validateHeaderMappings(
+      config.headerMappings
+    );
     const columnOrderResult = this.validateColumnOrder(config.columnOrder);
     const valueReplacementsResult = this.validateValueReplacements(
       config.valueReplacements
@@ -197,13 +231,18 @@ export class ConfigurationValidator {
 
     // Cross-validation: check if columnOrder references mapped headers
     if (config.headerMappings && config.columnOrder) {
-      const mappedHeaders = new Set(Object.values(config.headerMappings));
+      const mappedHeaders = new Set(
+        Object.values(config.headerMappings).flat()
+      );
       const originalHeaders = new Set(Object.keys(config.headerMappings));
 
       for (const column of config.columnOrder) {
         if (originalHeaders.has(column)) {
+          const mapped = config.headerMappings[column];
           warnings.push(
-            `columnOrder references original header '${column}' which will be mapped to '${config.headerMappings[column]}'`
+            `columnOrder references original header '${column}' which will be mapped to '${
+              Array.isArray(mapped) ? mapped.join(", ") : mapped
+            }'`
           );
         }
       }
@@ -215,7 +254,9 @@ export class ConfigurationValidator {
 
       // Check conflicts with header mappings
       if (config.headerMappings) {
-        const mappedHeaders = new Set(Object.values(config.headerMappings));
+        const mappedHeaders = new Set(
+          Object.values(config.headerMappings).flat()
+        );
         const originalHeaders = new Set(Object.keys(config.headerMappings));
 
         for (const fixedColumn of fixedColumnNames) {
@@ -262,7 +303,9 @@ export class ConfigurationValidator {
       !config.valueReplacements &&
       !config.fixedColumns
     ) {
-      warnings.push("Configuration is empty - no transformations will be applied");
+      warnings.push(
+        "Configuration is empty - no transformations will be applied"
+      );
     }
 
     return {

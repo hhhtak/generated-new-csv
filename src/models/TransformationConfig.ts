@@ -3,7 +3,7 @@
  */
 export interface TransformationConfig {
   /** Mapping from original header names to new header names */
-  headerMappings?: Record<string, string>;
+  headerMappings?: Record<string, string | string[]>;
 
   /** Desired order of columns in output CSV */
   columnOrder?: string[];
@@ -12,5 +12,5 @@ export interface TransformationConfig {
   valueReplacements?: Record<string, Record<string, string>>;
 
   /** Fixed columns to add with constant values */
-  fixedColumns?: Record<string, string>;
+  fixedColumns?: Record<string, string | number>;
 }
