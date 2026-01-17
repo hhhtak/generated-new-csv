@@ -1,6 +1,103 @@
-import { CSVData, TransformationConfig } from "../models";
+import { CSVData, DeleteCondition, TransformationConfig } from "../models";
 import { CSVConverterError, ErrorHandler } from "../utils/ErrorHandler";
 import { getLogger } from "../utils/Logger";
+
+/**
+ * Interface for data deletion operations
+ */
+export interface DataDeleter {
+  /**
+   * Delete rows based on specified conditions
+   */
+  deleteRows(data: CSVData, conditions: DeleteCondition[]): CSVData;
+}
+
+/**
+ * Implementation of data deletion operations
+ */
+export class DataDeleterImpl implements DataDeleter {
+  private errorHandler = ErrorHandler.getInstance();
+  private logger = getLogger();
+
+  /**
+   * Delete rows based on specified conditions
+   */
+  deleteRows(data: CSVData, conditions: DeleteCondition[]): CSVData {
+    this.logger.debug("Starting row deletion", {
+      originalRows: data.rows.length,
+      conditions: conditions.length,
+    });
+
+    try {
+      // Create mapping from header name to column index
+      const headerIndexMap = new Map<string, number>();
+      data.headers.forEach((header, index) => {
+        headerIndexMap.set(header, index);
+      });
+
+      // Validate that all condition columns exist
+      const missingColumns = conditions
+        .map((condition) => condition.column)
+        .filter((column) => !headerIndexMap.has(column));
+
+      if (missingColumns.length > 0) {
+        throw this.errorHandler.handleTransformationError(
+          `Invalid delete conditions: Delete condition references non-existent column: '${missingColumns.join("', '")}'`,
+          {
+            missingColumns,
+            availableHeaders: data.headers,
+            conditions,
+          },
+        );
+      }
+
+      // Filter rows based on conditions
+      const filteredRows = data.rows.filter((row) => {
+        // Row is kept if it doesn't match ALL of the delete conditions
+        // A row is deleted only if it matches ALL conditions (AND logic)
+        const matchesAllConditions = conditions.every((condition) => {
+          const columnIndex = headerIndexMap.get(condition.column);
+          if (columnIndex === undefined) return false;
+
+          const cellValue = row[columnIndex] || "";
+
+          // Check if cell value matches any of the condition values
+          if (Array.isArray(condition.value)) {
+            return condition.value.includes(cellValue);
+          } else {
+            return cellValue === condition.value;
+          }
+        });
+
+        // Keep the row if it doesn't match all conditions
+        return !matchesAllConditions;
+      });
+
+      const deletedCount = data.rows.length - filteredRows.length;
+      this.logger.info("Row deletion completed", {
+        originalRows: data.rows.length,
+        remainingRows: filteredRows.length,
+        deletedRows: deletedCount,
+      });
+
+      return {
+        headers: [...data.headers],
+        rows: filteredRows,
+      };
+    } catch (error) {
+      if (error instanceof CSVConverterError) {
+        throw error;
+      }
+
+      const structuredError = this.errorHandler.handleTransformationError(
+        error instanceof Error ? error.message : "Unknown deletion error",
+        { originalHeaders: data.headers, conditions },
+      );
+      this.logger.error("Row deletion failed", structuredError);
+      throw structuredError;
+    }
+  }
+}
 
 /**
  * Interface for data transformation operations
@@ -21,24 +118,18 @@ export interface DataTransformer {
    */
   replaceValues(
     data: CSVData,
-    replacements: Record<string, Record<string, string>>
+    replacements: Record<string, Record<string, string>>,
   ): CSVData;
 
   /**
    * Map headers to new names
    */
-  mapHeaders(
-    data: CSVData,
-    mappings: Record<string, string | string[]>
-  ): CSVData;
+  mapHeaders(data: CSVData, mappings: Record<string, string | string[]>): CSVData;
 
   /**
    * Add fixed columns with constant values
    */
-  addFixedColumns(
-    data: CSVData,
-    fixedColumns: Record<string, string | number>
-  ): CSVData;
+  addFixedColumns(data: CSVData, fixedColumns: Record<string, string | number>): CSVData;
 }
 
 /**
@@ -67,10 +158,7 @@ export class DataTransformerImpl implements DataTransformer {
         this.logger.debug("Applying header mappings", {
           mappings: Object.keys(config.headerMappings).length,
         });
-        transformedData = this.mapHeaders(
-          transformedData,
-          config.headerMappings
-        );
+        transformedData = this.mapHeaders(transformedData, config.headerMappings);
       }
 
       // Add fixed columns before column reordering
@@ -78,10 +166,7 @@ export class DataTransformerImpl implements DataTransformer {
         this.logger.debug("Adding fixed columns", {
           columns: Object.keys(config.fixedColumns).length,
         });
-        transformedData = this.addFixedColumns(
-          transformedData,
-          config.fixedColumns
-        );
+        transformedData = this.addFixedColumns(transformedData, config.fixedColumns);
       }
 
       // Apply column reordering (after fixed columns are added)
@@ -89,10 +174,7 @@ export class DataTransformerImpl implements DataTransformer {
         this.logger.debug("Applying column reordering", {
           order: config.columnOrder,
         });
-        transformedData = this.reorderColumns(
-          transformedData,
-          config.columnOrder
-        );
+        transformedData = this.reorderColumns(transformedData, config.columnOrder);
       }
 
       // Apply value replacements
@@ -100,10 +182,7 @@ export class DataTransformerImpl implements DataTransformer {
         this.logger.debug("Applying value replacements", {
           columns: Object.keys(config.valueReplacements).length,
         });
-        transformedData = this.replaceValues(
-          transformedData,
-          config.valueReplacements
-        );
+        transformedData = this.replaceValues(transformedData, config.valueReplacements);
       }
 
       this.logger.info("Data transformation completed successfully", {
@@ -120,7 +199,7 @@ export class DataTransformerImpl implements DataTransformer {
 
       const structuredError = this.errorHandler.handleTransformationError(
         error instanceof Error ? error.message : "Unknown transformation error",
-        { originalHeaders: data.headers, config }
+        { originalHeaders: data.headers, config },
       );
       this.logger.error("Data transformation failed", structuredError);
       throw structuredError;
@@ -137,13 +216,13 @@ export class DataTransformerImpl implements DataTransformer {
     if (missingColumns.length > 0) {
       throw this.errorHandler.handleTransformationError(
         `columnOrderで指定された列 '${missingColumns.join(
-          ", "
+          ", ",
         )}' が入力CSVに見つかりません`,
         {
           missingColumns,
           availableHeaders: data.headers,
           requestedOrder: order,
-        }
+        },
       );
     }
 
@@ -159,7 +238,7 @@ export class DataTransformerImpl implements DataTransformer {
       if (index === undefined) {
         throw this.errorHandler.handleTransformationError(
           `列 '${header}' が見つかりません`,
-          { header, availableHeaders: data.headers }
+          { header, availableHeaders: data.headers },
         );
       }
       return index;
@@ -170,7 +249,7 @@ export class DataTransformerImpl implements DataTransformer {
 
     // Reorder data rows
     const reorderedRows = data.rows.map((row) =>
-      columnIndices.map((index) => row[index] || "")
+      columnIndices.map((index) => row[index] || ""),
     );
 
     return {
@@ -185,7 +264,7 @@ export class DataTransformerImpl implements DataTransformer {
    */
   replaceValues(
     data: CSVData,
-    replacements: Record<string, Record<string, string>>
+    replacements: Record<string, Record<string, string>>,
   ): CSVData {
     // Create mapping from header name to column index
     const headerIndexMap = new Map<string, number>();
@@ -227,10 +306,7 @@ export class DataTransformerImpl implements DataTransformer {
    * Map headers to new names
    * If no mapping is provided for a header, the original name is preserved
    */
-  mapHeaders(
-    data: CSVData,
-    mappings: Record<string, string | string[]>
-  ): CSVData {
+  mapHeaders(data: CSVData, mappings: Record<string, string | string[]>): CSVData {
     const newHeaders: string[] = [];
     const headerMap: (string | string[] | null)[] = []; // Maps old index to new header(s)
 
@@ -275,25 +351,20 @@ export class DataTransformerImpl implements DataTransformer {
    * Add fixed columns with constant values
    * Validates that fixed column names don't conflict with existing columns
    */
-  addFixedColumns(
-    data: CSVData,
-    fixedColumns: Record<string, string | number>
-  ): CSVData {
+  addFixedColumns(data: CSVData, fixedColumns: Record<string, string | number>): CSVData {
     // Check for duplicate column names
     const duplicateColumns = Object.keys(fixedColumns).filter((columnName) =>
-      data.headers.includes(columnName)
+      data.headers.includes(columnName),
     );
 
     if (duplicateColumns.length > 0) {
       throw this.errorHandler.handleTransformationError(
-        `固定列の名前が既存の列と重複しています: '${duplicateColumns.join(
-          ", "
-        )}'`,
+        `固定列の名前が既存の列と重複しています: '${duplicateColumns.join(", ")}'`,
         {
           duplicateColumns,
           existingHeaders: data.headers,
           fixedColumns: Object.keys(fixedColumns),
-        }
+        },
       );
     }
 

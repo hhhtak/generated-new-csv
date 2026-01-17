@@ -1,4 +1,8 @@
-import { TransformationConfig, ValidationResult } from "./index";
+import {
+  DeleteCondition,
+  TransformationConfig,
+  ValidationResult,
+} from "./index";
 
 /**
  * Utility functions for validating transformation configuration components
@@ -162,8 +166,104 @@ export class ConfigurationValidator {
   }
 
   /**
-   * Validate fixed columns configuration
+   * Validate delete conditions configuration
    */
+  static validateDeleteConditions(
+    deleteConditions: DeleteCondition[] | undefined
+  ): ValidationResult {
+    const errors: string[] = [];
+
+    if (deleteConditions === undefined) {
+      return { isValid: true, errors: [] };
+    }
+
+    if (!Array.isArray(deleteConditions)) {
+      errors.push("deleteConditions must be an array");
+      return { isValid: false, errors };
+    }
+
+    for (let i = 0; i < deleteConditions.length; i++) {
+      const condition = deleteConditions[i];
+
+      if (!condition || typeof condition !== "object") {
+        errors.push(`deleteConditions[${i}] must be an object`);
+        continue;
+      }
+
+      // Validate column property
+      if (typeof condition.column !== "string") {
+        errors.push(`deleteConditions[${i}].column must be a non-empty string`);
+      } else if (condition.column.trim() === "") {
+        errors.push(
+          `deleteConditions[${i}].column cannot be empty or whitespace-only`
+        );
+      }
+
+      // Validate value property
+      if (condition.value === undefined || condition.value === null) {
+        errors.push(`deleteConditions[${i}].value is required`);
+      } else if (typeof condition.value === "string") {
+        // Single string value is valid (can be empty string)
+      } else if (Array.isArray(condition.value)) {
+        if (condition.value.length === 0) {
+          errors.push(`deleteConditions[${i}].value array cannot be empty`);
+        } else {
+          for (let j = 0; j < condition.value.length; j++) {
+            if (typeof condition.value[j] !== "string") {
+              errors.push(
+                `deleteConditions[${i}].value[${j}] must be a string`
+              );
+              break;
+            }
+          }
+        }
+      } else {
+        errors.push(
+          `deleteConditions[${i}].value must be a string or an array of strings`
+        );
+      }
+
+      // Check for extra properties
+      const allowedProperties = new Set(["column", "value"]);
+      for (const prop in condition) {
+        if (!allowedProperties.has(prop)) {
+          errors.push(
+            `deleteConditions[${i}] contains unexpected property '${prop}'`
+          );
+        }
+      }
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }
+
+  /**
+   * Validate delete conditions against available headers
+   */
+  static validateDeleteConditionsWithHeaders(
+    deleteConditions: DeleteCondition[] | undefined,
+    headers: string[]
+  ): ValidationResult {
+    const errors: string[] = [];
+
+    if (!deleteConditions || deleteConditions.length === 0) {
+      return { isValid: true, errors: [] };
+    }
+
+    const headerSet = new Set(headers);
+
+    for (let i = 0; i < deleteConditions.length; i++) {
+      const condition = deleteConditions[i];
+
+      if (condition.column && !headerSet.has(condition.column)) {
+        errors.push(
+          `deleteConditions[${i}] references column '${condition.column}' which does not exist in input CSV`
+        );
+      }
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }
   static validateFixedColumns(
     fixedColumns: Record<string, string | number> | undefined
   ): ValidationResult {
@@ -202,6 +302,41 @@ export class ConfigurationValidator {
   }
 
   /**
+   * Validate output encoding configuration
+   */
+  static validateOutputEncoding(
+    outputEncoding: string | undefined
+  ): ValidationResult {
+    const errors: string[] = [];
+
+    if (outputEncoding === undefined) {
+      return { isValid: true, errors: [] };
+    }
+
+    if (typeof outputEncoding !== "string") {
+      errors.push("outputEncoding must be a string");
+      return { isValid: false, errors };
+    }
+
+    if (outputEncoding.trim() === "") {
+      errors.push("outputEncoding cannot be an empty string");
+      return { isValid: false, errors };
+    }
+
+    // Check if encoding is supported
+    const supportedEncodings = ["utf8", "shift_jis", "euc-jp"];
+    if (!supportedEncodings.includes(outputEncoding.toLowerCase())) {
+      errors.push(
+        `outputEncoding '${outputEncoding}' is not supported. Supported encodings: ${supportedEncodings.join(
+          ", "
+        )}`
+      );
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }
+
+  /**
    * Validate entire transformation configuration
    */
   static validateConfiguration(config: TransformationConfig): ValidationResult {
@@ -223,11 +358,19 @@ export class ConfigurationValidator {
       config.valueReplacements
     );
     const fixedColumnsResult = this.validateFixedColumns(config.fixedColumns);
+    const deleteConditionsResult = this.validateDeleteConditions(
+      config.deleteConditions
+    );
+    const outputEncodingResult = this.validateOutputEncoding(
+      config.outputEncoding
+    );
 
     errors.push(...headerMappingsResult.errors);
     errors.push(...columnOrderResult.errors);
     errors.push(...valueReplacementsResult.errors);
     errors.push(...fixedColumnsResult.errors);
+    errors.push(...deleteConditionsResult.errors);
+    errors.push(...outputEncodingResult.errors);
 
     // Cross-validation: check if columnOrder references mapped headers
     if (config.headerMappings && config.columnOrder) {
@@ -301,7 +444,9 @@ export class ConfigurationValidator {
       !config.headerMappings &&
       !config.columnOrder &&
       !config.valueReplacements &&
-      !config.fixedColumns
+      !config.fixedColumns &&
+      !config.deleteConditions &&
+      !config.outputEncoding
     ) {
       warnings.push(
         "Configuration is empty - no transformations will be applied"
