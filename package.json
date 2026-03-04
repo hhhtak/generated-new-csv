@@ -20,29 +20,32 @@
     "csv",
     "converter",
     "transformation",
-    "data-processing"
+    "data-processing",
+    "encoding",
+    "sequence-columns",
+    "data-deletion"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "commander": "12.1.0",
-    "csv-parser": "3.0.0",
+    "commander": "^12.1.0",
+    "csv-parser": "^3.0.0",
     "express": "^4.22.1",
     "iconv-lite": "^0.7.2",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^2.0.0"
   },
   "devDependencies": {
-    "@types/express": "4.17.21",
+    "@types/express": "^5.0.0",
     "@types/iconv-lite": "^0.0.1",
-    "@types/jest": "29.5.12",
-    "@types/multer": "1.4.11",
-    "@types/node": "20.14.9",
-    "@typescript-eslint/eslint-plugin": "8.1.0",
-    "@typescript-eslint/parser": "8.1.0",
-    "eslint": "9.6.0",
-    "jest": "29.7.0",
-    "ts-jest": "29.1.5",
-    "ts-node": "10.9.2",
-    "typescript": "5.5.2"
+    "@types/jest": "^29.5.14",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^22.10.5",
+    "@typescript-eslint/eslint-plugin": "^8.19.1",
+    "@typescript-eslint/parser": "^8.19.1",
+    "eslint": "^9.18.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
   }
 }

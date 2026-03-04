@@ -12,7 +12,7 @@ export class ConfigurationValidator {
    * Validate header mappings configuration
    */
   static validateHeaderMappings(
-    headerMappings: Record<string, string | string[]> | undefined
+    headerMappings: Record<string, string | string[]> | undefined,
   ): ValidationResult {
     const errors: string[] = [];
 
@@ -34,26 +34,26 @@ export class ConfigurationValidator {
       if (typeof value === "string") {
         if (value.trim() === "") {
           errors.push(
-            `headerMappings value for key '${key}' cannot be an empty string`
+            `headerMappings value for key '${key}' cannot be an empty string`,
           );
         }
       } else if (Array.isArray(value)) {
         if (value.length === 0) {
           errors.push(
-            `headerMappings array value for key '${key}' cannot be empty`
+            `headerMappings array value for key '${key}' cannot be empty`,
           );
         }
         for (const v of value) {
           if (typeof v !== "string" || v.trim() === "") {
             errors.push(
-              `headerMappings array for key '${key}' must only contain non-empty strings`
+              `headerMappings array for key '${key}' must only contain non-empty strings`,
             );
             break;
           }
         }
       } else {
         errors.push(
-          `headerMappings value for key '${key}' must be a string or an array of strings`
+          `headerMappings value for key '${key}' must be a string or an array of strings`,
         );
       }
     }
@@ -76,7 +76,7 @@ export class ConfigurationValidator {
    * Validate column order configuration
    */
   static validateColumnOrder(
-    columnOrder: string[] | undefined
+    columnOrder: string[] | undefined,
   ): ValidationResult {
     const errors: string[] = [];
 
@@ -113,7 +113,7 @@ export class ConfigurationValidator {
    * Validate value replacements configuration
    */
   static validateValueReplacements(
-    valueReplacements: Record<string, Record<string, string>> | undefined
+    valueReplacements: Record<string, Record<string, string>> | undefined,
   ): ValidationResult {
     const errors: string[] = [];
 
@@ -127,7 +127,7 @@ export class ConfigurationValidator {
     }
 
     for (const [columnName, replacements] of Object.entries(
-      valueReplacements
+      valueReplacements,
     )) {
       if (typeof columnName !== "string" || columnName.trim() === "") {
         errors.push("valueReplacements column names must be non-empty strings");
@@ -136,7 +136,7 @@ export class ConfigurationValidator {
 
       if (typeof replacements !== "object" || replacements === null) {
         errors.push(
-          `valueReplacements for column '${columnName}' must be an object`
+          `valueReplacements for column '${columnName}' must be an object`,
         );
         continue;
       }
@@ -144,7 +144,7 @@ export class ConfigurationValidator {
       for (const [oldValue, newValue] of Object.entries(replacements)) {
         if (typeof oldValue !== "string" || typeof newValue !== "string") {
           errors.push(
-            `valueReplacements for column '${columnName}' must have string keys and values`
+            `valueReplacements for column '${columnName}' must have string keys and values`,
           );
           break;
         }
@@ -155,7 +155,7 @@ export class ConfigurationValidator {
       for (const [oldValue, newValue] of Object.entries(replacements)) {
         if (reverseMap.has(newValue) && reverseMap.get(newValue) === oldValue) {
           errors.push(
-            `Circular replacement detected in column '${columnName}': '${oldValue}' <-> '${newValue}'`
+            `Circular replacement detected in column '${columnName}': '${oldValue}' <-> '${newValue}'`,
           );
         }
         reverseMap.set(oldValue, newValue);
@@ -169,7 +169,7 @@ export class ConfigurationValidator {
    * Validate delete conditions configuration
    */
   static validateDeleteConditions(
-    deleteConditions: DeleteCondition[] | undefined
+    deleteConditions: DeleteCondition[] | undefined,
   ): ValidationResult {
     const errors: string[] = [];
 
@@ -195,7 +195,7 @@ export class ConfigurationValidator {
         errors.push(`deleteConditions[${i}].column must be a non-empty string`);
       } else if (condition.column.trim() === "") {
         errors.push(
-          `deleteConditions[${i}].column cannot be empty or whitespace-only`
+          `deleteConditions[${i}].column cannot be empty or whitespace-only`,
         );
       }
 
@@ -211,7 +211,7 @@ export class ConfigurationValidator {
           for (let j = 0; j < condition.value.length; j++) {
             if (typeof condition.value[j] !== "string") {
               errors.push(
-                `deleteConditions[${i}].value[${j}] must be a string`
+                `deleteConditions[${i}].value[${j}] must be a string`,
               );
               break;
             }
@@ -219,7 +219,7 @@ export class ConfigurationValidator {
         }
       } else {
         errors.push(
-          `deleteConditions[${i}].value must be a string or an array of strings`
+          `deleteConditions[${i}].value must be a string or an array of strings`,
         );
       }
 
@@ -228,7 +228,7 @@ export class ConfigurationValidator {
       for (const prop in condition) {
         if (!allowedProperties.has(prop)) {
           errors.push(
-            `deleteConditions[${i}] contains unexpected property '${prop}'`
+            `deleteConditions[${i}] contains unexpected property '${prop}'`,
           );
         }
       }
@@ -242,7 +242,7 @@ export class ConfigurationValidator {
    */
   static validateDeleteConditionsWithHeaders(
     deleteConditions: DeleteCondition[] | undefined,
-    headers: string[]
+    headers: string[],
   ): ValidationResult {
     const errors: string[] = [];
 
@@ -257,7 +257,7 @@ export class ConfigurationValidator {
 
       if (condition.column && !headerSet.has(condition.column)) {
         errors.push(
-          `deleteConditions[${i}] references column '${condition.column}' which does not exist in input CSV`
+          `deleteConditions[${i}] references column '${condition.column}' which does not exist in input CSV`,
         );
       }
     }
@@ -265,7 +265,7 @@ export class ConfigurationValidator {
     return { isValid: errors.length === 0, errors };
   }
   static validateFixedColumns(
-    fixedColumns: Record<string, string | number> | undefined
+    fixedColumns: Record<string, string | number> | undefined,
   ): ValidationResult {
     const errors: string[] = [];
 
@@ -285,7 +285,7 @@ export class ConfigurationValidator {
       }
       if (typeof value !== "string" && typeof value !== "number") {
         errors.push(
-          `fixedColumns value for column '${columnName}' must be a string or a number`
+          `fixedColumns value for column '${columnName}' must be a string or a number`,
         );
         continue; // continue to find all errors
       }
@@ -305,7 +305,7 @@ export class ConfigurationValidator {
    * Validate output encoding configuration
    */
   static validateOutputEncoding(
-    outputEncoding: string | undefined
+    outputEncoding: string | undefined,
   ): ValidationResult {
     const errors: string[] = [];
 
@@ -328,9 +328,86 @@ export class ConfigurationValidator {
     if (!supportedEncodings.includes(outputEncoding.toLowerCase())) {
       errors.push(
         `outputEncoding '${outputEncoding}' is not supported. Supported encodings: ${supportedEncodings.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }
+
+  /**
+   * Validate sequence columns configuration
+   */
+  static validateSequenceColumns(
+    sequenceColumns: any[] | undefined,
+  ): ValidationResult {
+    const errors: string[] = [];
+
+    if (sequenceColumns === undefined) {
+      return { isValid: true, errors: [] };
+    }
+
+    if (!Array.isArray(sequenceColumns)) {
+      errors.push("sequenceColumns must be an array");
+      return { isValid: false, errors };
+    }
+
+    for (let i = 0; i < sequenceColumns.length; i++) {
+      const seq = sequenceColumns[i];
+
+      if (!seq || typeof seq !== "object") {
+        errors.push(`sequenceColumns[${i}] must be an object`);
+        continue;
+      }
+
+      // Validate column property
+      if (typeof seq.column !== "string") {
+        errors.push(`sequenceColumns[${i}].column must be a non-empty string`);
+      } else if (seq.column.trim() === "") {
+        errors.push(
+          `sequenceColumns[${i}].column cannot be empty or whitespace-only`,
+        );
+      }
+
+      // Validate start property (optional)
+      if (seq.start !== undefined) {
+        if (typeof seq.start !== "number") {
+          errors.push(`sequenceColumns[${i}].start must be a number`);
+        } else if (!Number.isInteger(seq.start)) {
+          errors.push(`sequenceColumns[${i}].start must be an integer`);
+        }
+      }
+
+      // Validate step property (optional)
+      if (seq.step !== undefined) {
+        if (typeof seq.step !== "number") {
+          errors.push(`sequenceColumns[${i}].step must be a number`);
+        } else if (!Number.isInteger(seq.step)) {
+          errors.push(`sequenceColumns[${i}].step must be an integer`);
+        } else if (seq.step === 0) {
+          errors.push(`sequenceColumns[${i}].step cannot be zero`);
+        }
+      }
+
+      // Check for extra properties
+      const allowedProperties = new Set(["column", "start", "step"]);
+      for (const prop in seq) {
+        if (!allowedProperties.has(prop)) {
+          errors.push(
+            `sequenceColumns[${i}] contains unexpected property '${prop}'`,
+          );
+        }
+      }
+    }
+
+    // Check for duplicate column names
+    const columnNames = sequenceColumns
+      .filter((seq) => seq && typeof seq.column === "string")
+      .map((seq) => seq.column);
+    const uniqueColumns = new Set(columnNames);
+    if (uniqueColumns.size !== columnNames.length) {
+      errors.push("sequenceColumns cannot contain duplicate column names");
     }
 
     return { isValid: errors.length === 0, errors };
@@ -351,18 +428,21 @@ export class ConfigurationValidator {
 
     // Validate each component
     const headerMappingsResult = this.validateHeaderMappings(
-      config.headerMappings
+      config.headerMappings,
     );
     const columnOrderResult = this.validateColumnOrder(config.columnOrder);
     const valueReplacementsResult = this.validateValueReplacements(
-      config.valueReplacements
+      config.valueReplacements,
     );
     const fixedColumnsResult = this.validateFixedColumns(config.fixedColumns);
     const deleteConditionsResult = this.validateDeleteConditions(
-      config.deleteConditions
+      config.deleteConditions,
     );
     const outputEncodingResult = this.validateOutputEncoding(
-      config.outputEncoding
+      config.outputEncoding,
+    );
+    const sequenceColumnsResult = this.validateSequenceColumns(
+      config.sequenceColumns,
     );
 
     errors.push(...headerMappingsResult.errors);
@@ -371,11 +451,12 @@ export class ConfigurationValidator {
     errors.push(...fixedColumnsResult.errors);
     errors.push(...deleteConditionsResult.errors);
     errors.push(...outputEncodingResult.errors);
+    errors.push(...sequenceColumnsResult.errors);
 
     // Cross-validation: check if columnOrder references mapped headers
     if (config.headerMappings && config.columnOrder) {
       const mappedHeaders = new Set(
-        Object.values(config.headerMappings).flat()
+        Object.values(config.headerMappings).flat(),
       );
       const originalHeaders = new Set(Object.keys(config.headerMappings));
 
@@ -385,7 +466,7 @@ export class ConfigurationValidator {
           warnings.push(
             `columnOrder references original header '${column}' which will be mapped to '${
               Array.isArray(mapped) ? mapped.join(", ") : mapped
-            }'`
+            }'`,
           );
         }
       }
@@ -398,19 +479,19 @@ export class ConfigurationValidator {
       // Check conflicts with header mappings
       if (config.headerMappings) {
         const mappedHeaders = new Set(
-          Object.values(config.headerMappings).flat()
+          Object.values(config.headerMappings).flat(),
         );
         const originalHeaders = new Set(Object.keys(config.headerMappings));
 
         for (const fixedColumn of fixedColumnNames) {
           if (originalHeaders.has(fixedColumn)) {
             errors.push(
-              `Fixed column '${fixedColumn}' conflicts with original header in headerMappings`
+              `Fixed column '${fixedColumn}' conflicts with original header in headerMappings`,
             );
           }
           if (mappedHeaders.has(fixedColumn)) {
             errors.push(
-              `Fixed column '${fixedColumn}' conflicts with mapped header in headerMappings`
+              `Fixed column '${fixedColumn}' conflicts with mapped header in headerMappings`,
             );
           }
         }
@@ -421,7 +502,7 @@ export class ConfigurationValidator {
         for (const fixedColumn of fixedColumnNames) {
           if (!config.columnOrder.includes(fixedColumn)) {
             warnings.push(
-              `Fixed column '${fixedColumn}' is not included in columnOrder and will be placed at the end`
+              `Fixed column '${fixedColumn}' is not included in columnOrder and will be placed at the end`,
             );
           }
         }
@@ -432,7 +513,7 @@ export class ConfigurationValidator {
         for (const fixedColumn of fixedColumnNames) {
           if (config.valueReplacements[fixedColumn]) {
             warnings.push(
-              `Fixed column '${fixedColumn}' has value replacements defined, but fixed columns have constant values`
+              `Fixed column '${fixedColumn}' has value replacements defined, but fixed columns have constant values`,
             );
           }
         }
@@ -446,10 +527,11 @@ export class ConfigurationValidator {
       !config.valueReplacements &&
       !config.fixedColumns &&
       !config.deleteConditions &&
-      !config.outputEncoding
+      !config.outputEncoding &&
+      !config.sequenceColumns
     ) {
       warnings.push(
-        "Configuration is empty - no transformations will be applied"
+        "Configuration is empty - no transformations will be applied",
       );
     }
 

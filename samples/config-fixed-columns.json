@@ -1,7 +1,20 @@
 {
+  "headerMappings": {
+    "商品名": "product_name",
+    "価格": "price",
+    "在庫": "stock",
+    "カテゴリ": "category"
+  },
+  "columnOrder": [
+    "product_name",
+    "price",
+    "stock",
+    "category",
+    "status",
+    "last_updated"
+  ],
   "fixedColumns": {
-    "created_date": "2024-01-01",
-    "company": "TechCorp",
-    "version": "1.0"
+    "status": "active",
+    "last_updated": "2024-01-01"
   }
 }

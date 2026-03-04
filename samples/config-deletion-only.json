@@ -1,0 +1,12 @@
+{
+  "deleteConditions": [
+    {
+      "column": "availability",
+      "value": "なし"
+    },
+    {
+      "column": "priority",
+      "value": ["低", "中"]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+task_id,title,availability,priority,assignee,category
+T001,データベース設計,あり,高,田中,開発
+T005,バグ修正,なし,高,高橋,開発

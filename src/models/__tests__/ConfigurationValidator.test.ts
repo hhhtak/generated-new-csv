@@ -25,7 +25,7 @@ describe("ConfigurationValidator", () => {
 
     it("should reject non-object headerMappings", () => {
       const result = ConfigurationValidator.validateHeaderMappings(
-        "not an object" as any
+        "not an object" as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -47,7 +47,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "headerMappings value for key 'valid' must be a string or an array of strings"
+        "headerMappings value for key 'valid' must be a string or an array of strings",
       );
     });
 
@@ -59,7 +59,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "headerMappings keys must be non-empty strings"
+        "headerMappings keys must be non-empty strings",
       );
     });
 
@@ -71,7 +71,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "headerMappings value for key 'key' cannot be an empty string"
+        "headerMappings value for key 'key' cannot be an empty string",
       );
     });
 
@@ -83,7 +83,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "headerMappings keys must be non-empty strings"
+        "headerMappings keys must be non-empty strings",
       );
     });
 
@@ -117,7 +117,7 @@ describe("ConfigurationValidator", () => {
 
     it("should reject non-array columnOrder", () => {
       const result = ConfigurationValidator.validateColumnOrder(
-        "not an array" as any
+        "not an array" as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -140,7 +140,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "columnOrder cannot contain empty strings"
+        "columnOrder cannot contain empty strings",
       );
     });
 
@@ -151,7 +151,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "columnOrder cannot contain empty strings"
+        "columnOrder cannot contain empty strings",
       );
     });
 
@@ -162,7 +162,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "columnOrder cannot contain duplicate column names"
+        "columnOrder cannot contain duplicate column names",
       );
     });
 
@@ -200,7 +200,7 @@ describe("ConfigurationValidator", () => {
 
     it("should reject non-object valueReplacements", () => {
       const result = ConfigurationValidator.validateValueReplacements(
-        "not an object" as any
+        "not an object" as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -209,7 +209,7 @@ describe("ConfigurationValidator", () => {
 
     it("should reject null valueReplacements", () => {
       const result = ConfigurationValidator.validateValueReplacements(
-        null as any
+        null as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -224,7 +224,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "valueReplacements column names must be non-empty strings"
+        "valueReplacements column names must be non-empty strings",
       );
     });
 
@@ -236,7 +236,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "valueReplacements column names must be non-empty strings"
+        "valueReplacements column names must be non-empty strings",
       );
     });
 
@@ -248,7 +248,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "valueReplacements for column 'column' must be an object"
+        "valueReplacements for column 'column' must be an object",
       );
     });
 
@@ -260,7 +260,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "valueReplacements for column 'column' must be an object"
+        "valueReplacements for column 'column' must be an object",
       );
     });
 
@@ -272,7 +272,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "valueReplacements for column 'column' must have string keys and values"
+        "valueReplacements for column 'column' must have string keys and values",
       );
     });
 
@@ -284,7 +284,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "Circular replacement detected in column 'column': 'B' <-> 'A'"
+        "Circular replacement detected in column 'column': 'B' <-> 'A'",
       );
     });
 
@@ -323,7 +323,7 @@ describe("ConfigurationValidator", () => {
 
     it("should reject non-object fixedColumns", () => {
       const result = ConfigurationValidator.validateFixedColumns(
-        "not an object" as any
+        "not an object" as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -344,7 +344,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "fixedColumns column names must be non-empty strings"
+        "fixedColumns column names must be non-empty strings",
       );
     });
 
@@ -355,7 +355,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "fixedColumns column names must be non-empty strings"
+        "fixedColumns column names must be non-empty strings",
       );
     });
 
@@ -376,7 +376,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "fixedColumns value for column 'column' must be a string or a number"
+        "fixedColumns value for column 'column' must be a string or a number",
       );
     });
 
@@ -499,7 +499,7 @@ describe("ConfigurationValidator", () => {
 
     it("should reject non-array deleteConditions", () => {
       const result = ConfigurationValidator.validateDeleteConditions(
-        "not an array" as any
+        "not an array" as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -534,7 +534,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0].column must be a non-empty string"
+        "deleteConditions[0].column must be a non-empty string",
       );
     });
 
@@ -548,7 +548,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0].column cannot be empty or whitespace-only"
+        "deleteConditions[0].column cannot be empty or whitespace-only",
       );
     });
 
@@ -562,7 +562,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0].column cannot be empty or whitespace-only"
+        "deleteConditions[0].column cannot be empty or whitespace-only",
       );
     });
 
@@ -574,7 +574,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0].column must be a non-empty string"
+        "deleteConditions[0].column must be a non-empty string",
       );
     });
 
@@ -608,7 +608,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0].value array cannot be empty"
+        "deleteConditions[0].value array cannot be empty",
       );
     });
 
@@ -622,7 +622,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0].value[1] must be a string"
+        "deleteConditions[0].value[1] must be a string",
       );
     });
 
@@ -634,7 +634,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0].value must be a string or an array of strings"
+        "deleteConditions[0].value must be a string or an array of strings",
       );
     });
 
@@ -648,7 +648,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0] contains unexpected property 'extraProp'"
+        "deleteConditions[0] contains unexpected property 'extraProp'",
       );
     });
 
@@ -698,17 +698,17 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0].column cannot be empty or whitespace-only"
+        "deleteConditions[0].column cannot be empty or whitespace-only",
       );
       expect(result.errors).toContain("deleteConditions[0].value is required");
       expect(result.errors).toContain(
-        "deleteConditions[1].column must be a non-empty string"
+        "deleteConditions[1].column must be a non-empty string",
       );
       expect(result.errors).toContain(
-        "deleteConditions[1].value array cannot be empty"
+        "deleteConditions[1].value array cannot be empty",
       );
       expect(result.errors).toContain(
-        "deleteConditions[2].column must be a non-empty string"
+        "deleteConditions[2].column must be a non-empty string",
       );
       expect(result.errors).toContain("deleteConditions[2].value is required");
     });
@@ -719,7 +719,7 @@ describe("ConfigurationValidator", () => {
       const headers = ["name", "status", "age"];
       const result = ConfigurationValidator.validateDeleteConditionsWithHeaders(
         undefined,
-        headers
+        headers,
       );
 
       expect(result.isValid).toBe(true);
@@ -731,7 +731,7 @@ describe("ConfigurationValidator", () => {
       const deleteConditions: DeleteCondition[] = [];
       const result = ConfigurationValidator.validateDeleteConditionsWithHeaders(
         deleteConditions,
-        headers
+        headers,
       );
 
       expect(result.isValid).toBe(true);
@@ -747,7 +747,7 @@ describe("ConfigurationValidator", () => {
 
       const result = ConfigurationValidator.validateDeleteConditionsWithHeaders(
         deleteConditions,
-        headers
+        headers,
       );
 
       expect(result.isValid).toBe(true);
@@ -763,12 +763,12 @@ describe("ConfigurationValidator", () => {
 
       const result = ConfigurationValidator.validateDeleteConditionsWithHeaders(
         deleteConditions,
-        headers
+        headers,
       );
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[1] references column 'nonexistent' which does not exist in input CSV"
+        "deleteConditions[1] references column 'nonexistent' which does not exist in input CSV",
       );
     });
 
@@ -782,15 +782,15 @@ describe("ConfigurationValidator", () => {
 
       const result = ConfigurationValidator.validateDeleteConditionsWithHeaders(
         deleteConditions,
-        headers
+        headers,
       );
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0] references column 'missing1' which does not exist in input CSV"
+        "deleteConditions[0] references column 'missing1' which does not exist in input CSV",
       );
       expect(result.errors).toContain(
-        "deleteConditions[2] references column 'missing2' which does not exist in input CSV"
+        "deleteConditions[2] references column 'missing2' which does not exist in input CSV",
       );
       expect(result.errors).not.toContain("status");
     });
@@ -803,12 +803,12 @@ describe("ConfigurationValidator", () => {
 
       const result = ConfigurationValidator.validateDeleteConditionsWithHeaders(
         deleteConditions,
-        headers
+        headers,
       );
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0] references column 'status' which does not exist in input CSV"
+        "deleteConditions[0] references column 'status' which does not exist in input CSV",
       );
     });
 
@@ -821,12 +821,12 @@ describe("ConfigurationValidator", () => {
 
       const result = ConfigurationValidator.validateDeleteConditionsWithHeaders(
         deleteConditions,
-        headers
+        headers,
       );
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "deleteConditions[0] references column 'name' which does not exist in input CSV"
+        "deleteConditions[0] references column 'name' which does not exist in input CSV",
       );
       expect(result.errors).not.toContain("Status");
     });
@@ -841,7 +841,7 @@ describe("ConfigurationValidator", () => {
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
       expect(result.warnings).toContain(
-        "Configuration is empty - no transformations will be applied"
+        "Configuration is empty - no transformations will be applied",
       );
     });
 
@@ -872,7 +872,7 @@ describe("ConfigurationValidator", () => {
 
     it("should reject non-object configuration", () => {
       const result = ConfigurationValidator.validateConfiguration(
-        "not an object" as any
+        "not an object" as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -908,7 +908,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(true);
       expect(result.warnings).toContain(
-        "columnOrder references original header 'old_name' which will be mapped to 'new_name'"
+        "columnOrder references original header 'old_name' which will be mapped to 'new_name'",
       );
     });
 
@@ -980,7 +980,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "Fixed column 'status' conflicts with original header in headerMappings"
+        "Fixed column 'status' conflicts with original header in headerMappings",
       );
     });
 
@@ -994,7 +994,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "Fixed column 'status' conflicts with mapped header in headerMappings"
+        "Fixed column 'status' conflicts with mapped header in headerMappings",
       );
     });
 
@@ -1008,10 +1008,10 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(true);
       expect(result.warnings).toContain(
-        "Fixed column 'status' is not included in columnOrder and will be placed at the end"
+        "Fixed column 'status' is not included in columnOrder and will be placed at the end",
       );
       expect(result.warnings).toContain(
-        "Fixed column 'version' is not included in columnOrder and will be placed at the end"
+        "Fixed column 'version' is not included in columnOrder and will be placed at the end",
       );
     });
 
@@ -1025,7 +1025,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(true);
       expect(result.warnings).toContain(
-        "Fixed column 'status' has value replacements defined, but fixed columns have constant values"
+        "Fixed column 'status' has value replacements defined, but fixed columns have constant values",
       );
     });
 
@@ -1048,16 +1048,16 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "Fixed column 'status' conflicts with mapped header in headerMappings"
+        "Fixed column 'status' conflicts with mapped header in headerMappings",
       );
       expect(result.warnings).toContain(
-        "Fixed column 'version' is not included in columnOrder and will be placed at the end"
+        "Fixed column 'version' is not included in columnOrder and will be placed at the end",
       );
       expect(result.warnings).toContain(
-        "Fixed column 'status' has value replacements defined, but fixed columns have constant values"
+        "Fixed column 'status' has value replacements defined, but fixed columns have constant values",
       );
       expect(result.warnings).toContain(
-        "Fixed column 'department' has value replacements defined, but fixed columns have constant values"
+        "Fixed column 'department' has value replacements defined, but fixed columns have constant values",
       );
     });
 
@@ -1092,13 +1092,13 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "Fixed column 'status' conflicts with mapped header in headerMappings"
+        "Fixed column 'status' conflicts with mapped header in headerMappings",
       );
       expect(result.errors).toContain(
-        "Fixed column 'version' conflicts with mapped header in headerMappings"
+        "Fixed column 'version' conflicts with mapped header in headerMappings",
       );
       expect(result.errors).toContain(
-        "Fixed column 'full_name' conflicts with mapped header in headerMappings"
+        "Fixed column 'full_name' conflicts with mapped header in headerMappings",
       );
     });
 
@@ -1112,7 +1112,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "Fixed column 'status' conflicts with original header in headerMappings"
+        "Fixed column 'status' conflicts with original header in headerMappings",
       );
     });
 
@@ -1160,25 +1160,25 @@ describe("ConfigurationValidator", () => {
 
     it("should validate supported encodings", () => {
       expect(
-        ConfigurationValidator.validateOutputEncoding("utf8").isValid
+        ConfigurationValidator.validateOutputEncoding("utf8").isValid,
       ).toBe(true);
       expect(
-        ConfigurationValidator.validateOutputEncoding("shift_jis").isValid
+        ConfigurationValidator.validateOutputEncoding("shift_jis").isValid,
       ).toBe(true);
       expect(
-        ConfigurationValidator.validateOutputEncoding("euc-jp").isValid
+        ConfigurationValidator.validateOutputEncoding("euc-jp").isValid,
       ).toBe(true);
     });
 
     it("should be case-insensitive", () => {
       expect(
-        ConfigurationValidator.validateOutputEncoding("UTF8").isValid
+        ConfigurationValidator.validateOutputEncoding("UTF8").isValid,
       ).toBe(true);
       expect(
-        ConfigurationValidator.validateOutputEncoding("SHIFT_JIS").isValid
+        ConfigurationValidator.validateOutputEncoding("SHIFT_JIS").isValid,
       ).toBe(true);
       expect(
-        ConfigurationValidator.validateOutputEncoding("EUC-JP").isValid
+        ConfigurationValidator.validateOutputEncoding("EUC-JP").isValid,
       ).toBe(true);
     });
 
@@ -1187,7 +1187,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "outputEncoding 'latin1' is not supported. Supported encodings: utf8, shift_jis, euc-jp"
+        "outputEncoding 'latin1' is not supported. Supported encodings: utf8, shift_jis, euc-jp",
       );
     });
 
@@ -1203,7 +1203,7 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "outputEncoding cannot be an empty string"
+        "outputEncoding cannot be an empty string",
       );
     });
 
@@ -1212,8 +1212,200 @@ describe("ConfigurationValidator", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "outputEncoding cannot be an empty string"
+        "outputEncoding cannot be an empty string",
       );
+    });
+  });
+
+  describe("validateSequenceColumns", () => {
+    it("should validate undefined sequenceColumns", () => {
+      const result = ConfigurationValidator.validateSequenceColumns(undefined);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should validate valid sequenceColumns", () => {
+      const sequenceColumns = [
+        { column: "id", start: 1, step: 1 },
+        { column: "order_no", start: 100, step: 10 },
+      ];
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should validate sequenceColumns with defaults", () => {
+      const sequenceColumns = [{ column: "id" }];
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should reject non-array sequenceColumns", () => {
+      const result = ConfigurationValidator.validateSequenceColumns(
+        "not an array" as any,
+      );
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain("sequenceColumns must be an array");
+    });
+
+    it("should reject sequenceColumns with non-object elements", () => {
+      const sequenceColumns = ["not an object"] as any;
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain("sequenceColumns[0] must be an object");
+    });
+
+    it("should reject sequenceColumns with missing column", () => {
+      const sequenceColumns = [{ start: 1 }] as any;
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "sequenceColumns[0].column must be a non-empty string",
+      );
+    });
+
+    it("should reject sequenceColumns with empty column", () => {
+      const sequenceColumns = [{ column: "", start: 1 }];
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "sequenceColumns[0].column cannot be empty or whitespace-only",
+      );
+    });
+
+    it("should reject sequenceColumns with non-number start", () => {
+      const sequenceColumns = [{ column: "id", start: "1" }] as any;
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "sequenceColumns[0].start must be a number",
+      );
+    });
+
+    it("should reject sequenceColumns with non-integer start", () => {
+      const sequenceColumns = [{ column: "id", start: 1.5 }];
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "sequenceColumns[0].start must be an integer",
+      );
+    });
+
+    it("should reject sequenceColumns with non-number step", () => {
+      const sequenceColumns = [{ column: "id", step: "1" }] as any;
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "sequenceColumns[0].step must be a number",
+      );
+    });
+
+    it("should reject sequenceColumns with non-integer step", () => {
+      const sequenceColumns = [{ column: "id", step: 1.5 }];
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "sequenceColumns[0].step must be an integer",
+      );
+    });
+
+    it("should reject sequenceColumns with zero step", () => {
+      const sequenceColumns = [{ column: "id", step: 0 }];
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain("sequenceColumns[0].step cannot be zero");
+    });
+
+    it("should reject sequenceColumns with duplicate column names", () => {
+      const sequenceColumns = [
+        { column: "id", start: 1 },
+        { column: "id", start: 100 },
+      ];
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "sequenceColumns cannot contain duplicate column names",
+      );
+    });
+
+    it("should reject sequenceColumns with unexpected properties", () => {
+      const sequenceColumns = [
+        { column: "id", start: 1, extraProp: "invalid" },
+      ] as any;
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "sequenceColumns[0] contains unexpected property 'extraProp'",
+      );
+    });
+
+    it("should allow negative start values", () => {
+      const sequenceColumns = [{ column: "id", start: -10, step: 1 }];
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should allow negative step values", () => {
+      const sequenceColumns = [{ column: "id", start: 100, step: -1 }];
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should validate empty sequenceColumns array", () => {
+      const sequenceColumns: any[] = [];
+
+      const result =
+        ConfigurationValidator.validateSequenceColumns(sequenceColumns);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
   });
 });

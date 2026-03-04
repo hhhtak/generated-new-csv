@@ -55,8 +55,12 @@ describe("Error Handling Integration Tests", () => {
         await app.execute(nonExistentFile, outputFile);
       } catch (error) {
         expect(error).toBeInstanceOf(CSVConverterError);
-        expect((error as CSVConverterError).code).toBe(ErrorCode.FILE_NOT_FOUND);
-        expect((error as CSVConverterError).message).toContain("File not found");
+        expect((error as CSVConverterError).code).toBe(
+          ErrorCode.FILE_NOT_FOUND
+        );
+        expect((error as CSVConverterError).message).toContain(
+          "File not found"
+        );
       }
     });
 
@@ -68,21 +72,27 @@ describe("Error Handling Integration Tests", () => {
       // Create valid input file
       fs.writeFileSync(inputFile, "name,age\nJohn,30\nJane,25");
 
-      await expect(app.execute(inputFile, outputFile, nonExistentConfig)).rejects.toThrow(
-        CSVConverterError
-      );
+      await expect(
+        app.execute(inputFile, outputFile, nonExistentConfig)
+      ).rejects.toThrow(CSVConverterError);
 
       try {
         await app.execute(inputFile, outputFile, nonExistentConfig);
       } catch (error) {
         expect(error).toBeInstanceOf(CSVConverterError);
-        expect((error as CSVConverterError).code).toBe(ErrorCode.FILE_NOT_FOUND);
+        expect((error as CSVConverterError).code).toBe(
+          ErrorCode.FILE_NOT_FOUND
+        );
       }
     });
 
     it("should handle invalid output directory", async () => {
       const inputFile = path.join(tempDir, "input.csv");
-      const invalidOutputFile = "/invalid/path/output.csv";
+      // Windows環境では存在しないドライブを使用
+      const invalidOutputFile =
+        process.platform === "win32"
+          ? "Z:\\invalid\\path\\output.csv"
+          : "/invalid/path/output.csv";
 
       // Create valid input file
       fs.writeFileSync(inputFile, "name,age\nJohn,30\nJane,25");
@@ -101,13 +111,17 @@ describe("Error Handling Integration Tests", () => {
       // Create empty file
       fs.writeFileSync(inputFile, "");
 
-      await expect(app.execute(inputFile, outputFile)).rejects.toThrow(CSVConverterError);
+      await expect(app.execute(inputFile, outputFile)).rejects.toThrow(
+        CSVConverterError
+      );
 
       try {
         await app.execute(inputFile, outputFile);
       } catch (error) {
         expect(error).toBeInstanceOf(CSVConverterError);
-        expect((error as CSVConverterError).code).toBe(ErrorCode.INVALID_CSV_FORMAT);
+        expect((error as CSVConverterError).code).toBe(
+          ErrorCode.INVALID_CSV_FORMAT
+        );
       }
     });
 
@@ -139,15 +153,17 @@ describe("Error Handling Integration Tests", () => {
       // Create invalid JSON config
       fs.writeFileSync(configFile, "{ invalid json }");
 
-      await expect(app.execute(inputFile, outputFile, configFile)).rejects.toThrow(
-        CSVConverterError
-      );
+      await expect(
+        app.execute(inputFile, outputFile, configFile)
+      ).rejects.toThrow(CSVConverterError);
 
       try {
         await app.execute(inputFile, outputFile, configFile);
       } catch (error) {
         expect(error).toBeInstanceOf(CSVConverterError);
-        expect((error as CSVConverterError).code).toBe(ErrorCode.INVALID_CONFIGURATION);
+        expect((error as CSVConverterError).code).toBe(
+          ErrorCode.INVALID_CONFIGURATION
+        );
         expect((error as CSVConverterError).message).toContain("Invalid JSON");
       }
     });
@@ -166,16 +182,20 @@ describe("Error Handling Integration Tests", () => {
       };
       fs.writeFileSync(configFile, JSON.stringify(config));
 
-      await expect(app.execute(inputFile, outputFile, configFile)).rejects.toThrow(
-        CSVConverterError
-      );
+      await expect(
+        app.execute(inputFile, outputFile, configFile)
+      ).rejects.toThrow(CSVConverterError);
 
       try {
         await app.execute(inputFile, outputFile, configFile);
       } catch (error) {
         expect(error).toBeInstanceOf(CSVConverterError);
-        expect((error as CSVConverterError).code).toBe(ErrorCode.MISSING_COLUMN);
-        expect((error as CSVConverterError).message).toContain("見つかりません");
+        expect((error as CSVConverterError).code).toBe(
+          ErrorCode.MISSING_COLUMN
+        );
+        expect((error as CSVConverterError).message).toContain(
+          "見つかりません"
+        );
       }
     });
   });
@@ -195,16 +215,20 @@ describe("Error Handling Integration Tests", () => {
       };
       fs.writeFileSync(configFile, JSON.stringify(config));
 
-      await expect(app.execute(inputFile, outputFile, configFile)).rejects.toThrow(
-        CSVConverterError
-      );
+      await expect(
+        app.execute(inputFile, outputFile, configFile)
+      ).rejects.toThrow(CSVConverterError);
 
       try {
         await app.execute(inputFile, outputFile, configFile);
       } catch (error) {
         expect(error).toBeInstanceOf(CSVConverterError);
-        expect((error as CSVConverterError).code).toBe(ErrorCode.MISSING_COLUMN);
-        expect((error as CSVConverterError).context).toHaveProperty("missingColumns");
+        expect((error as CSVConverterError).code).toBe(
+          ErrorCode.MISSING_COLUMN
+        );
+        expect((error as CSVConverterError).context).toHaveProperty(
+          "missingColumns"
+        );
         expect((error as CSVConverterError).context.missingColumns).toContain(
           "missing_column"
         );
@@ -215,28 +239,41 @@ describe("Error Handling Integration Tests", () => {
   describe("Output Errors", () => {
     it("should handle write permission errors", async () => {
       const inputFile = path.join(tempDir, "input.csv");
-      const outputFile = path.join(tempDir, "readonly", "output.csv");
+      // Windows環境では存在しないドライブを使用してエラーを発生させる
+      const outputFile =
+        process.platform === "win32"
+          ? "Z:\\readonly\\output.csv"
+          : path.join(tempDir, "readonly", "output.csv");
 
       // Create valid input file
       fs.writeFileSync(inputFile, "name,age\nJohn,30\nJane,25");
 
-      // Create readonly directory
-      const readonlyDir = path.join(tempDir, "readonly");
-      fs.mkdirSync(readonlyDir);
+      if (process.platform !== "win32") {
+        // Create readonly directory (Unix/Linux only)
+        const readonlyDir = path.join(tempDir, "readonly");
+        fs.mkdirSync(readonlyDir);
 
-      // Make directory readonly (this might not work on all systems)
-      try {
-        fs.chmodSync(readonlyDir, 0o444);
+        // Make directory readonly (this might not work on all systems)
+        try {
+          fs.chmodSync(readonlyDir, 0o444);
+        } catch (error) {
+          // If chmod fails, skip this test
+          return;
+        }
+      }
 
-        await expect(app.execute(inputFile, outputFile)).rejects.toThrow(
-          CSVConverterError
-        );
+      await expect(app.execute(inputFile, outputFile)).rejects.toThrow(
+        CSVConverterError
+      );
 
+      if (process.platform !== "win32") {
         // Restore permissions for cleanup
-        fs.chmodSync(readonlyDir, 0o755);
-      } catch (chmodError) {
-        // Skip test if chmod is not supported
-        console.warn("Skipping readonly directory test - chmod not supported");
+        try {
+          const readonlyDir = path.join(tempDir, "readonly");
+          fs.chmodSync(readonlyDir, 0o755);
+        } catch (chmodError) {
+          // Ignore cleanup errors
+        }
       }
     });
   });
@@ -260,7 +297,9 @@ describe("Error Handling Integration Tests", () => {
         await app.execute(inputFile, outputFile, configFile);
       } catch (error) {
         expect(error).toBeInstanceOf(CSVConverterError);
-        const formattedMessage = (error as CSVConverterError).getFormattedMessage();
+        const formattedMessage = (
+          error as CSVConverterError
+        ).getFormattedMessage();
         expect(formattedMessage).toContain("[MISSING_COLUMN]");
         expect(formattedMessage).toContain("missing_column");
       }

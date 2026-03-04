@@ -45,7 +45,7 @@ export class CSVConverterApp {
     inputPath: string,
     outputPath: string,
     configPath?: string,
-    verbose: boolean = false
+    verbose: boolean = false,
   ): Promise<void> {
     // Set log level based on verbose flag
     if (verbose) {
@@ -83,6 +83,7 @@ export class CSVConverterApp {
           hasFixedColumns: !!config.fixedColumns,
           hasDeleteConditions: !!config.deleteConditions,
           hasOutputEncoding: !!config.outputEncoding,
+          hasSequenceColumns: !!config.sequenceColumns,
           headerMappingsCount: config.headerMappings
             ? Object.keys(config.headerMappings).length
             : 0,
@@ -96,11 +97,14 @@ export class CSVConverterApp {
           deleteConditionsCount: config.deleteConditions
             ? config.deleteConditions.length
             : 0,
+          sequenceColumnsCount: config.sequenceColumns
+            ? config.sequenceColumns.length
+            : 0,
           outputEncoding: config.outputEncoding || "utf8 (default)",
         });
       } else {
         this.logger.info(
-          "No configuration file provided - performing direct copy"
+          "No configuration file provided - performing direct copy",
         );
       }
 
@@ -114,7 +118,7 @@ export class CSVConverterApp {
 
         processedData = this.deleter.deleteRows(
           csvData,
-          config.deleteConditions
+          config.deleteConditions,
         );
 
         const deletedCount = csvData.rows.length - processedData.rows.length;
@@ -124,7 +128,7 @@ export class CSVConverterApp {
         });
       } else {
         this.logger.debug(
-          "No deletion conditions specified - skipping deletion step"
+          "No deletion conditions specified - skipping deletion step",
         );
       }
 
@@ -151,15 +155,15 @@ export class CSVConverterApp {
       // Step 6: Apply encoding if specified
       if (config.outputEncoding) {
         this.logger.info(
-          `Applying encoding transformation: ${config.outputEncoding}`
+          `Applying encoding transformation: ${config.outputEncoding}`,
         );
         await this.encoder.encode(outputPath, config.outputEncoding);
         this.logger.info(
-          `Successfully encoded output file to ${config.outputEncoding}`
+          `Successfully encoded output file to ${config.outputEncoding}`,
         );
       } else {
         this.logger.debug(
-          "No output encoding specified - file remains in UTF-8"
+          "No output encoding specified - file remains in UTF-8",
         );
       }
 
@@ -181,11 +185,11 @@ export class CSVConverterApp {
           error instanceof Error ? error.message : String(error)
         }`,
         undefined,
-        { inputPath, outputPath, configPath }
+        { inputPath, outputPath, configPath },
       );
       this.logger.error(
         "Unexpected error during CSV transformation",
-        structuredError
+        structuredError,
       );
       throw structuredError;
     }
@@ -199,7 +203,8 @@ export class CSVConverterApp {
       config.headerMappings ||
       config.columnOrder ||
       config.valueReplacements ||
-      config.fixedColumns
+      config.fixedColumns ||
+      config.sequenceColumns
     );
   }
 

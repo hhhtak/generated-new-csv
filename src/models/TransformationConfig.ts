@@ -19,6 +19,9 @@ export interface TransformationConfig {
 
   /** Output file encoding (utf8, shift_jis, euc-jp) */
   outputEncoding?: string;
+
+  /** Sequence number columns to add with auto-incrementing values */
+  sequenceColumns?: SequenceColumn[];
 }
 
 /**
@@ -30,4 +33,18 @@ export interface DeleteCondition {
 
   /** Value or array of values to match for deletion */
   value: string | string[];
+}
+
+/**
+ * Configuration for adding sequence number columns
+ */
+export interface SequenceColumn {
+  /** Column name for the sequence number */
+  column: string;
+
+  /** Starting value for the sequence (default: 1) */
+  start?: number;
+
+  /** Increment step for each row (default: 1) */
+  step?: number;
 }

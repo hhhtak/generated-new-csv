@@ -94,6 +94,16 @@ run_test "Task data with value replacement" \
     "samples/config-value-replacement.json" \
     "samples/output-tasks-expected.csv"
 
+run_test "Employee data with deletion functionality" \
+    "samples/input-employees-with-inactive.csv" \
+    "samples/config-with-deletion.json" \
+    "samples/output-employees-with-deletion-expected.csv"
+
+run_test "Task data with deletion only (multiple conditions)" \
+    "samples/input-tasks-mixed.csv" \
+    "samples/config-deletion-only.json" \
+    "samples/output-tasks-deletion-only-expected.csv"
+
 echo ""
 echo "=== Validation Results ==="
 echo "✅ Passed: $PASSED"

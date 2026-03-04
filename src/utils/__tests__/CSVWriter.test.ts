@@ -84,13 +84,18 @@ describe("CSVWriterImpl", () => {
   });
 
   describe("write", () => {
-    const outputPath = "/test/output.csv";
+    // Windows環境に対応したパスを使用
+    const outputPath =
+      process.platform === "win32"
+        ? "C:\\test\\output.csv"
+        : "/test/output.csv";
+    const outputDir = process.platform === "win32" ? "C:\\test" : "/test";
 
     it("should write CSV data to file successfully", async () => {
       await csvWriter.write(testData, outputPath);
 
-      expect(mockFs.mkdir).toHaveBeenCalledWith("/test", { recursive: true });
-      expect(mockFs.access).toHaveBeenCalledWith("/test", 2);
+      expect(mockFs.mkdir).toHaveBeenCalledWith(outputDir, { recursive: true });
+      expect(mockFs.access).toHaveBeenCalledWith(outputDir, 2);
       expect(mockFs.writeFile).toHaveBeenCalledWith(
         outputPath,
         "Name,Age,City\nJohn Doe,30,New York\nJane Smith,25,Los Angeles",
@@ -100,10 +105,21 @@ describe("CSVWriterImpl", () => {
     });
 
     it("should create output directory if it does not exist", async () => {
-      await csvWriter.write(testData, "/deep/nested/path/output.csv");
+      const deepPath =
+        process.platform === "win32"
+          ? "C:\\deep\\nested\\path\\output.csv"
+          : "/deep/nested/path/output.csv";
+      const deepDir =
+        process.platform === "win32"
+          ? "C:\\deep\\nested\\path"
+          : "/deep/nested/path";
 
-      expect(mockFs.mkdir).toHaveBeenCalledWith("/deep/nested/path", { recursive: true });
-      expect(mockFs.access).toHaveBeenCalledWith("/deep/nested/path", 2);
+      await csvWriter.write(testData, deepPath);
+
+      expect(mockFs.mkdir).toHaveBeenCalledWith(deepDir, {
+        recursive: true,
+      });
+      expect(mockFs.access).toHaveBeenCalledWith(deepDir, 2);
     });
 
     it("should handle data with special characters correctly", async () => {
@@ -119,7 +135,11 @@ describe("CSVWriterImpl", () => {
 
       const expectedContent =
         'Name,Description,Notes\n"John ""Johnny"" Doe","Software, Engineer","Works in\nNew York"\nJane Smith,Data Analyst,Remote worker';
-      expect(mockFs.writeFile).toHaveBeenCalledWith(outputPath, expectedContent, "utf8");
+      expect(mockFs.writeFile).toHaveBeenCalledWith(
+        outputPath,
+        expectedContent,
+        "utf8"
+      );
     });
 
     it("should handle empty data", async () => {
@@ -133,7 +153,11 @@ describe("CSVWriterImpl", () => {
 
       await csvWriter.write(emptyData, outputPath);
 
-      expect(mockFs.writeFile).toHaveBeenCalledWith(outputPath, "Col1,Col2", "utf8");
+      expect(mockFs.writeFile).toHaveBeenCalledWith(
+        outputPath,
+        "Col1,Col2",
+        "utf8"
+      );
     });
 
     describe("validation", () => {
@@ -144,9 +168,9 @@ describe("CSVWriterImpl", () => {
       });
 
       it("should throw error for undefined CSV data", async () => {
-        await expect(csvWriter.write(undefined as any, outputPath)).rejects.toThrow(
-          "CSV data cannot be null or undefined"
-        );
+        await expect(
+          csvWriter.write(undefined as any, outputPath)
+        ).rejects.toThrow("CSV data cannot be null or undefined");
       });
 
       it("should throw error for non-array headers", async () => {
@@ -208,8 +232,13 @@ describe("CSVWriterImpl", () => {
         const permError = new Error("EACCES: permission denied");
         mockFs.access.mockRejectedValue(permError);
 
+        const expectedMessage =
+          process.platform === "win32"
+            ? "Permission denied: Cannot write to directory 'C:\\test'. Please check directory permissions."
+            : "Permission denied: Cannot write to directory '/test'. Please check directory permissions.";
+
         await expect(csvWriter.write(testData, outputPath)).rejects.toThrow(
-          "Permission denied: Cannot write to directory '/test'. Please check directory permissions."
+          expectedMessage
         );
       });
 
@@ -217,8 +246,13 @@ describe("CSVWriterImpl", () => {
         const notDirError = new Error("ENOTDIR: not a directory");
         mockFs.mkdir.mockRejectedValue(notDirError);
 
+        const expectedMessage =
+          process.platform === "win32"
+            ? "Invalid path: 'C:\\test' is not a directory"
+            : "Invalid path: '/test' is not a directory";
+
         await expect(csvWriter.write(testData, outputPath)).rejects.toThrow(
-          "Invalid path: '/test' is not a directory"
+          expectedMessage
         );
       });
 
@@ -226,8 +260,13 @@ describe("CSVWriterImpl", () => {
         const createError = new Error("ENOENT: no such file or directory");
         mockFs.mkdir.mockRejectedValue(createError);
 
+        const expectedMessage =
+          process.platform === "win32"
+            ? "Directory creation failed: Cannot create directory 'C:\\test'"
+            : "Directory creation failed: Cannot create directory '/test'";
+
         await expect(csvWriter.write(testData, outputPath)).rejects.toThrow(
-          "Directory creation failed: Cannot create directory '/test'"
+          expectedMessage
         );
       });
 
@@ -235,8 +274,13 @@ describe("CSVWriterImpl", () => {
         const writeError = new Error("EACCES: permission denied");
         mockFs.writeFile.mockRejectedValue(writeError);
 
+        const expectedMessage =
+          process.platform === "win32"
+            ? "Permission denied: Cannot write to file 'C:\\test\\output.csv'. Please check file and directory permissions."
+            : "Permission denied: Cannot write to file '/test/output.csv'. Please check file and directory permissions.";
+
         await expect(csvWriter.write(testData, outputPath)).rejects.toThrow(
-          "Permission denied: Cannot write to file '/test/output.csv'. Please check file and directory permissions."
+          expectedMessage
         );
       });
 
@@ -244,8 +288,13 @@ describe("CSVWriterImpl", () => {
         const spaceError = new Error("ENOSPC: no space left on device");
         mockFs.writeFile.mockRejectedValue(spaceError);
 
+        const expectedMessage =
+          process.platform === "win32"
+            ? "Insufficient disk space: Cannot write to file 'C:\\test\\output.csv'"
+            : "Insufficient disk space: Cannot write to file '/test/output.csv'";
+
         await expect(csvWriter.write(testData, outputPath)).rejects.toThrow(
-          "Insufficient disk space: Cannot write to file '/test/output.csv'"
+          expectedMessage
         );
       });
 
@@ -253,8 +302,13 @@ describe("CSVWriterImpl", () => {
         const fileError = new Error("EMFILE: too many open files");
         mockFs.writeFile.mockRejectedValue(fileError);
 
+        const expectedMessage =
+          process.platform === "win32"
+            ? "Too many open files: Cannot write to file 'C:\\test\\output.csv'"
+            : "Too many open files: Cannot write to file '/test/output.csv'";
+
         await expect(csvWriter.write(testData, outputPath)).rejects.toThrow(
-          "Too many open files: Cannot write to file '/test/output.csv'"
+          expectedMessage
         );
       });
 
@@ -270,8 +324,13 @@ describe("CSVWriterImpl", () => {
         const genericError = new Error("Some other error");
         mockFs.access.mockRejectedValue(genericError);
 
+        const expectedMessage =
+          process.platform === "win32"
+            ? "Directory access error for 'C:\\test': Some other error"
+            : "Directory access error for '/test': Some other error";
+
         await expect(csvWriter.write(testData, outputPath)).rejects.toThrow(
-          "Directory access error for '/test': Some other error"
+          expectedMessage
         );
       });
 
@@ -279,8 +338,13 @@ describe("CSVWriterImpl", () => {
         const genericError = new Error("Some write error");
         mockFs.writeFile.mockRejectedValue(genericError);
 
+        const expectedMessage =
+          process.platform === "win32"
+            ? "File write error for 'C:\\test\\output.csv': Some write error"
+            : "File write error for '/test/output.csv': Some write error";
+
         await expect(csvWriter.write(testData, outputPath)).rejects.toThrow(
-          "File write error for '/test/output.csv': Some write error"
+          expectedMessage
         );
       });
     });
